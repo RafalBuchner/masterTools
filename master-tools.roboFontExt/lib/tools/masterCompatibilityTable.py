@@ -6,7 +6,7 @@ import mojo.drawingTools as ctx
 from mojo.events import addObserver, removeObserver
 from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
-
+from mojo.roboFont import AllFonts
 
 
 
@@ -26,6 +26,7 @@ class CompatibilityTable(object):
 
         self.glyph = None
         self.fonts = []
+        self.windows = {}
         addObserver(self, "observerGlyphWindowWillOpen", "glyphWindowWillOpen")
         addObserver(self, "observerGlyphWindowWillClose",
                     "glyphWindowWillClose")
