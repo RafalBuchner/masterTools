@@ -1,4 +1,4 @@
 # menuTitle : compatibility table
-from tools.masterCompatibilityTable import CompatibilityTable
+from masterTools.features.masterCompatibilityTable import CompatibilityTable
 
 CompatibilityTable(testMode=True)

@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from tools.vanillaSubClasses import CompatibilityList
+from masterTools.UI.vanillaSubClasses import CompatibilityList
 from vanilla import *
 import mojo.drawingTools as ctx
 from mojo.events import addObserver, removeObserver
@@ -89,8 +89,9 @@ class CompatibilityTable(object):
             view.infoGroup = Group((x,y,210-p,-p))
             view.infoGroup.title = TextBox((5,0,-0,-p),"info")
             view.infoGroup.box = Box((0, self.btnH, -0, -0))
-            view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n"for info in self.info]), alignment="right")
             view.infoGroup.box.infoTitles = TextBox((0,0,-0,-p), "".join([title+"\n" for title in self.info]))
+            view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n" for info in self.info]), alignment="right")
+
             # add the view to the GlyphEditor
 
             window.addGlyphEditorSubview(view)
