@@ -1,8 +1,21 @@
 # coding: utf-8
 
 from vanilla.vanillaList import *
-from AppKit import NSColor, NSFont, NSMakeRect, NSBezierPath
-from Foundation import NSTableHeaderCell,NSTextFieldCell
+from AppKit import NSColor, NSFont, NSMakeRect, NSTableHeaderCell, NSRectFillUsingOperation
+from Foundation import NSTextFieldCell
+
+class TransparentNSTableHeaderCell(NSTableHeaderCell):
+    def drawWithFrame_inView_(self, frame, view):
+
+        NSColor.clearColor().set()
+        NSRectFill(frame)
+
+        extra_space = view.tableView().intercellSpacing().width + 2
+        padded_frame = NSMakeRect(frame.origin.x + (extra_space / 2),
+             frame.origin.y+5, frame.size.width - extra_space,
+             frame.size.height)
+
+        NSTableHeaderCell.drawInteriorWithFrame_inView_(self, padded_frame, view)
 
 
 class CompatibilityList(List):
@@ -134,7 +147,7 @@ class CompatibilityList(List):
 
         if transparentBackground:
             self._tableView.setBackgroundColor_(NSColor.clearColor())
-            self._tableView.headerView().setBackgroundColor_(NSColor.clearColor())
+            #self._tableView.headerView().setBackgroundColor_(NSColor.clearColor())
         # deletingBorders
         if drawBorders is False:
             self._tableView.enclosingScrollView().setBorderType_(0)
@@ -166,10 +179,9 @@ class CompatibilityList(List):
             # instantiate the column.
             column = NSTableColumn.alloc().initWithIdentifier_(key)
             # # #####TEST
-            # # column.setHeaderCell_(TransparentTableHeaderCell.alloc().init())
-            # # column.headerCell().setStringValue_(title)
-            
-            #column.headerCell().setBackgroundColor_()
+            if transparentBackground:
+                myHeaderCell = TransparentNSTableHeaderCell.alloc().init()
+                column.setHeaderCell_(myHeaderCell)
             # # #####TEST
             self._orderedColumnIdentifiers.append(key)
             # set the width resizing mask
@@ -177,12 +189,12 @@ class CompatibilityList(List):
             mask = NSTableColumnNoResizing
             column.setResizingMask_(mask)
             # set the header cell
-            
+
             column.headerCell().setTitle_(title)
             # setting custom font
             if font is not None:
                 column.headerCell().setFont_(font)
-            
+
             if transparentBackground:
                     column.headerCell().setDrawsBackground_(False)
                     column.headerCell().setBackgroundColor_(NSColor.clearColor())
@@ -196,7 +208,7 @@ class CompatibilityList(List):
             # setting custom font
             if font is not None:
                 cell.setFont_(font)
-            
+
             # assign the formatter
             if formatter is not None:
                 cell.setFormatter_(formatter)
@@ -206,7 +218,7 @@ class CompatibilityList(List):
                     bindingOptions = {NSCreatesSortDescriptorBindingOption : False}
                 # assign the key to the binding
                 column.bind_toObject_withKeyPath_options_(binding, self._arrayController, keyPath, bindingOptions)
-            
+
             # set the editability of the column.
             # if no value was defined in the column data,
             # base the editability on the presence of
@@ -231,7 +243,7 @@ class CompatibilityList(List):
             column.setMinWidth_(width+10)
             column.setMaxWidth_(width+10)
             tableWidth += width+14
-            
+
         # force the columns to adjust their widths if possible. (needed in 10.10)
         if mainWindow is not None:
             x,y,w,h = mainWindow.window().getPosSize()
@@ -257,7 +269,7 @@ if __name__ == "__main__":
                          columnDescriptions=[{"title": "One"}, {"title": "Two"}],
                          rowHeight=30, font=font,transparentBackground=True,
                          selectionCallback=self.selectionCallback)
-            
+
 
             self.w.open()
         def selectionCallback(self, sender):

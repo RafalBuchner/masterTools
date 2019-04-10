@@ -7,6 +7,12 @@ from mojo.events import addObserver, removeObserver
 from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
 from mojo.roboFont import AllFonts
+
+"""
+# TODO:
+ # numberSelectedOfPoints = calculateSelection(self.glyph) should be changed only when the selection changes. It cost too much memmory. (do it on mouseUp)
+ # provide better comments
+"""
 def calculateSelection(g):
     """calculate the real number of highlighted points"""
     # moveTo special misc
