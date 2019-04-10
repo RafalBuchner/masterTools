@@ -1,9 +1,7 @@
 # coding: utf-8
 
 from vanilla.vanillaList import *
-from AppKit import NSColor, NSFont, NSMakeRect, NSBezierPath
-from Foundation import NSTableHeaderCell,NSTextFieldCell
-
+from AppKit import NSFormatter, NSColor
 
 class CompatibilityList(List):
     def __init__(self, posSize, items, dataSource=None, columnDescriptions=None, showColumnTitles=True,
@@ -21,8 +19,7 @@ class CompatibilityList(List):
                 selfApplicationDropSettings=None,
                 otherApplicationDropSettings=None,
                 dragSettings=None,
-                mainWindow=None,
-                font=None):
+                mainWindow=None):
         if items is not None and dataSource is not None:
             raise VanillaError("can't pass both items and dataSource arguments")
 
@@ -85,7 +82,7 @@ class CompatibilityList(List):
             self._makeColumnWithoutColumnDescriptions()
             self._itemsWereDict = False
         else:
-            self._makeColumnsWithColumnDescriptions(columnDescriptions, mainWindow, drawBorders, transparentBackground, font)
+            self._makeColumnsWithColumnDescriptions(columnDescriptions, mainWindow, drawBorders, transparentBackground)
             self._itemsWereDict = True
         # set some typing sensitivity data
         self._typingSensitive = enableTypingSensitivity
@@ -142,7 +139,7 @@ class CompatibilityList(List):
         self._dragSettings = dragSettings
 
 
-    def _makeColumnsWithColumnDescriptions(self, columnDescriptions, mainWindow, drawBorders, transparentBackground, font):
+    def _makeColumnsWithColumnDescriptions(self, columnDescriptions, mainWindow, drawBorders, transparentBackground):
         # make sure that the column widths are in the correct format.
         self._handleColumnWidths(columnDescriptions)
         # create each column.
@@ -165,24 +162,13 @@ class CompatibilityList(List):
                 self._typingSensitiveColumn = columnIndex
             # instantiate the column.
             column = NSTableColumn.alloc().initWithIdentifier_(key)
-            # # #####TEST
-            # # column.setHeaderCell_(TransparentTableHeaderCell.alloc().init())
-            # # column.headerCell().setStringValue_(title)
-            
-            #column.headerCell().setBackgroundColor_()
-            # # #####TEST
             self._orderedColumnIdentifiers.append(key)
             # set the width resizing mask
 
             mask = NSTableColumnNoResizing
             column.setResizingMask_(mask)
             # set the header cell
-            
             column.headerCell().setTitle_(title)
-            # setting custom font
-            if font is not None:
-                column.headerCell().setFont_(font)
-            
             if transparentBackground:
                     column.headerCell().setDrawsBackground_(False)
                     column.headerCell().setBackgroundColor_(NSColor.clearColor())
@@ -193,10 +179,6 @@ class CompatibilityList(List):
                 cell.setStringValue_("")  # cells have weird default values
             else:
                 column.setDataCell_(cell)
-            # setting custom font
-            if font is not None:
-                cell.setFont_(font)
-            
             # assign the formatter
             if formatter is not None:
                 cell.setFormatter_(formatter)
@@ -206,7 +188,6 @@ class CompatibilityList(List):
                     bindingOptions = {NSCreatesSortDescriptorBindingOption : False}
                 # assign the key to the binding
                 column.bind_toObject_withKeyPath_options_(binding, self._arrayController, keyPath, bindingOptions)
-            
             # set the editability of the column.
             # if no value was defined in the column data,
             # base the editability on the presence of
@@ -231,39 +212,11 @@ class CompatibilityList(List):
             column.setMinWidth_(width+10)
             column.setMaxWidth_(width+10)
             tableWidth += width+14
-            
         # force the columns to adjust their widths if possible. (needed in 10.10)
-        if mainWindow is not None:
-            x,y,w,h = mainWindow.window().getPosSize()
+        x,y,w,h = mainWindow.window().getPosSize()
 
-            if tableWidth+210+18 < w-25:
-                x,y,w,h =  self.getPosSize()
-                self.setPosSize((x,y,tableWidth,h))
+        if tableWidth+210+18 < w-25:
+            x,y,w,h =  self.getPosSize()
+            self.setPosSize((x,y,tableWidth,h))
         self._tableView.sizeToFit()
         self.tableWidth = tableWidth
-########
-# test #
-########
-
-if __name__ == "__main__":
-    from vanilla import HUDFloatingWindow, Window
-    class ListDemo(object):
-        def __init__(self):
-
-            font = NSFont.systemFontOfSize_(17)
-            self.w = HUDFloatingWindow((200, 200))
-            self.w.myList = CompatibilityList((20, 20, -20, -20),
-                         [{"One": "A", "Two": "a"}, {"One": "B", "Two": "b"}],
-                         columnDescriptions=[{"title": "One"}, {"title": "Two"}],
-                         rowHeight=30, font=font,transparentBackground=True,
-                         selectionCallback=self.selectionCallback)
-            
-
-            self.w.open()
-        def selectionCallback(self, sender):
-
-            print()
-
-
-
-    ListDemo()
