@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from vanilla.vanillaList import *
-from AppKit import NSColor, NSFont, NSMakeRect, NSTableHeaderCell, NSRectFillUsingOperation
+from AppKit import NSColor, NSFont,NSTableHeaderCell, NSMakeRect, NSRectFill
 from Foundation import NSTextFieldCell
 
 class TransparentNSTableHeaderCell(NSTableHeaderCell):
