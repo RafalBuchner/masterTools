@@ -212,7 +212,7 @@ class DesignSpaceWindow(MTDialog):
         print(info)
 
     def doubleClickFontListCB(self, sender):
-        item = sender.get()[sender.getSelection()[0]]
+        item = self.designspace.fontMasters[sender.getSelection()[0]]
         selectedDefconFont = item.get("font")
         selectedRoboFontFont = item.get("robofont.font")
         
@@ -227,14 +227,14 @@ class DesignSpaceWindow(MTDialog):
             if self.currentFont is not None:
                 item["robofont.font"] = resizeOpenedFont(self.currentFont, selectedDefconFont.path)
             else:
-                OpenFont(selectedDefconFont.path)
+                item["robofont.font"] = OpenFont(selectedDefconFont.path)
         else:
             selectedRoboFontFont.close()
             item["robofont.font"] = None
 
     def selectionFontListCB(self, sender):
         if sender.getSelection():
-            item = sender.get()[sender.getSelection()[0]]
+            item = self.designspace.fontMasters[sender.getSelection()[0]]
             selectedRoboFontFont = item.get("robofont.font")
             
             # don't know why, but sometimes ["robofont.font"] changes into the NSNull
@@ -267,10 +267,16 @@ class DesignSpaceWindow(MTDialog):
         ########################################################
         for i,item in enumerate(self.designspace.fontMasters):
             robofont = item.get("robofont.font")
-            print(robofont) ## TEST
+            # don't know why, but sometimes ["robofont.font"] changes into the NSNull
+            # here I'm checking if it is NSNull or NoneType or RFont
+            if hasattr(robofont,"isNull"):
+                if robofont.isNull() == 1:
+                    item["robofont.font"] = None
+                    robofont = None
+                    
             if robofont is not None:
                 if sender is not None:
-                    if robofont == sender["font"]:
+                    if robofont == CurrentFont:
                         
                         # if setSelection:
                         self.fontPane.list.setSelection([i])
