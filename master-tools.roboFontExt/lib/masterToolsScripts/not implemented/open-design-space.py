@@ -1,1 +1,4 @@
-# menuTitle : open design space file
+# menuTitle : open design space
+from masterTools.UI.designSpaceWindow import DesignSpaceWindow
+
+DesignSpaceWindow()

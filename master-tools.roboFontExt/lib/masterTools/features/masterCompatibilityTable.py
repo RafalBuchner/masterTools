@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from masterTools.UI.vanillaSubClasses import CompatibilityList
+from masterTools.UI.vanillaSubClasses import MTlist
 from vanilla import *
 import mojo.drawingTools as ctx
 from mojo.events import addObserver, removeObserver
@@ -9,9 +9,10 @@ from mojo.UI import AllGlyphWindows
 from mojo.roboFont import AllFonts
 """
 # TODO:
- # numberSelectedOfPoints = calculateSelection(self.glyph) should be changed only when the selection changes. It cost too much memmory. (do it on mouseUp)
- # provide better comments
+    # numberSelectedOfPoints = calculateSelection(self.glyph) should be changed only when the selection changes. It cost too much memmory. (do it on mouseUp)
+    # provide better comments
 """
+
 def calculateSelection(g):
     """calculate the real number of highlighted points"""
     # moveTo special misc
@@ -89,8 +90,7 @@ class CompatibilityTable(object):
         self.fonts = []
         self.windows = {}
         addObserver(self, "observerGlyphWindowWillOpen", "glyphWindowWillOpen")
-        addObserver(self, "observerGlyphWindowWillClose",
-                    "glyphWindowWillClose")
+        addObserver(self, "observerGlyphWindowWillClose", "glyphWindowWillClose")
         addObserver(self, "observerDraw", "draw")
         addObserver(self, "observerDrawPreview", "drawPreview")
         addObserver(self, "currentGlyphChangedObserver", "currentGlyphChanged")
@@ -99,7 +99,7 @@ class CompatibilityTable(object):
 
     def windowClose(self, sender):
         # if hasattr(self.view,"list"):
-        #     del self.view.list
+        #     del self.view.box.list
         # for i in self.windows:
         #     self.windows[i][1].window().unbind("resize", self.glyphWindowResizedCallback)
         removeObserver(self, "glyphWindowWillOpen")
@@ -116,9 +116,12 @@ class CompatibilityTable(object):
     def glyphWindowResizedCallback(self, sender):
         print(sender.getPosSize())
         x,y,w,h = sender.getPosSize()
-        if sender.view.list.tableWidth+210+18 < w-25:
-            x,y,w,h =  sender.view.list.getPosSize()
-            sender.view.list.setPosSize((x,y,tableWidth,h))
+        if sender.view.box.list.tableWidth+210+18 < w-25:
+            tableWidth = sender.view.box.list.tableWidth
+            x,y,w,h =  sender.view.box.list.getPosSize()
+            sender.view.box.list.setPosSize((x,y,tableWidth,h))
+            x,y,w,h =  sender.view.box.getPosSize()
+            sender.view.box.setPosSize((x,y,tableWidth+10,h))
     def observerGlyphWindowWillOpen(self, info):
 
         self.glyph = info["glyph"]
@@ -141,17 +144,23 @@ class CompatibilityTable(object):
 
             # create a view with some controls
             view = CanvasGroup((18, -200, -15, -19-15), delegate=self)
-
-            view.list = CompatibilityList((x+210, y, -p, -p),
-                                  self.items,
-                                  columnDescriptions=self.fontsDescriptor,
-                                  mainWindow=window,
-                                  transparentBackground=True,)
             view.infoGroup = Group((x,y,210-p,-p))
             view.infoGroup.title = TextBox((5,0,-0,-p),"info")
             view.infoGroup.box = Box((0, self.btnH, -0, -0))
             view.infoGroup.box.infoTitles = TextBox((0,0,-0,-p), "".join([title+"\n" for title in self.info]))
             view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n" for info in self.info]), alignment="right")
+
+            view.box = Box((x+210, y, -p, -p))
+            view.box.list = MTlist((0, 0, -0, -0),
+                                  self.items,
+                                  columnDescriptions=self.fontsDescriptor,
+                                  mainWindow=window,
+                                  transparentBackground=True,
+                                  widthIsHeader=True)
+            tableWidth = view.box.list.tableWidth
+            x,y,w,h =  view.box.getPosSize()
+            view.box.setPosSize((x,y,tableWidth+10,h))
+
 
             # add the view to the GlyphEditor
 
@@ -169,17 +178,20 @@ class CompatibilityTable(object):
         if sender != None:
             for i in self.windows:
                 view = self.windows[i][0]
-                view.list.show(True)
-                view.infoGroup.show(True)
+                # view.box.list.show(True)
+                # view.infoGroup.show(True)
 
-                del view.list
+                del view.box
+                del view.box
                 #del view.box
-
-                view.list = CompatibilityList((x+210, y, -p, -p),
+                print("!!!!!!!! add list > updateFonts")
+                view.box = Box((x+210, y, -p, -p))
+                view.box.list = MTlist((0, 0, -0, -0),
                                   self.items,
                                   columnDescriptions=self.fontsDescriptor,
-                                  mainWindow=self.windows[i],
-                                  transparentBackground=True,)
+                                  mainWindow=self.windows[i][1],
+                                  transparentBackground=True,
+                                  widthIsHeader=True)
 
                 #view.infoGroup.box.info = TextBox((x,y,120-p,-p),"".join([f"{self.info[info]}\n"for info in self.info]))
 
@@ -269,20 +281,20 @@ class CompatibilityTable(object):
 
         for i in self.windows:
             view = self.windows[i][0]
-            view.list.set(self.items)
+            view.box.list.set(self.items)
             view.infoGroup.box.info.set("".join([f"{self.info[info]}\n"for info in self.info]))
 
     def glyphChanged(self, sender):
         self.updateItems()
         for i in self.windows:
             view = self.windows[i][0]
-            view.list.set(self.items)
+            view.box.list.set(self.items)
             view.infoGroup.box.info.set("".join([f"{self.info[info]}\n"for info in self.info]))
 
     def observerDraw(self, notification):
         for i in self.windows:
             view = self.windows[i][0]
-            view.list.show(True)
+            view.box.list.show(True)
             view.infoGroup.show(True)
 
 
@@ -290,7 +302,7 @@ class CompatibilityTable(object):
         # hide the view in Preview mode
         for i in self.windows:
             view = self.windows[i][0]
-            view.list.show(True)
+            view.box.list.show(True)
             view.infoGroup.show(True)
 
     # canvas delegate callbacks
