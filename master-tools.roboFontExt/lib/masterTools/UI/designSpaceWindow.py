@@ -1,70 +1,18 @@
+from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
 from masterTools.misc.masterSwitcher import switchMasterTo, resizeOpenedFont
+from masterTools.misc import MasterToolsProcessor
+from masterTools.UI.objcBase import VerticallyCenteredTextFieldCell
 from masterTools.UI.vanillaSubClasses import MTDialog, MTlist, TMTextBox
 from masterTools.UI.glyphCellFactory import *
-from masterTools.UI.objcBase import VerticallyCenteredTextFieldCell
-from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
+
+from masterTools import copy2clip
 from mojo.UI import AccordionView
 from mojo.extensions import ExtensionBundle
-from ufoProcessor import *
-from masterTools import copy2clip
-#from DesignspaceProblems import *
 import os, AppKit,      sys
 from mojo.events import addObserver, removeObserver
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont
 
 
-class MasterToolsProcessor(DesignSpaceProcessor):
-    def getIncludedMaster(self, currfont):
-        includedFonts = [item for item in self.fontMasters if item["include"]]
-        index = [item[font].path for item in includedFonts].index(currfont.path)
-        mastersBefore = includedFonts[:index]
-        mastersAfter  = includedFonts[index+1:]
-        return mastersBefore, mastersAfter
-
-    @property
-    def includedFonts(self):
-        self._includedFonts = [item for item in self.fontMasters if item["include"]]
-        return self._includedFonts
-
-    def compareFonts(self):
-        pass
-
-    def compareGlyphs(self, fontNames, *glyphNames):
-        pass
-
-    def loadFonts(self, reload=False):
-        # Load the fonts and find the default candidate based on the info flag
-        if self._fontsLoaded and not reload:
-            return
-        names = set()
-        for i, sourceDescriptor in enumerate(self.sources):
-            if sourceDescriptor.name is None:
-                # make sure it has a unique name
-                sourceDescriptor.name = "master.%d" % i
-            if sourceDescriptor.name not in self.fonts:
-                if os.path.exists(sourceDescriptor.path):
-                    self.fonts[sourceDescriptor.name] = self._instantiateFont(sourceDescriptor.path)
-                    self.problems.append("loaded master from %s, layer %s, format %d" % (sourceDescriptor.path, sourceDescriptor.layerName, getUFOVersion(sourceDescriptor.path)))
-                    names |= set(self.fonts[sourceDescriptor.name].keys())
-                else:
-                    self.fonts[sourceDescriptor.name] = None
-                    self.problems.append("source ufo not found at %s" % (sourceDescriptor.path))
-        self.glyphNames = list(names)
-
-        self.fontMasters = []
-        for info in self.getFonts():
-            font = info[0]
-            fontname = os.path.relpath(font.path, self.path)
-            fontname = fontname[3:]
-            self.fontMasters += [dict(
-                include=True,
-                fontname=fontname,
-                font=info[0],
-                designSpacePosition=info[1],
-                )]
-
-
-        self._fontsLoaded = True
 
 bundle = ExtensionBundle("master-tools")
 table_icon = bundle.getResourceImage("table-icon", ext='pdf')
@@ -90,11 +38,11 @@ class DesignSpaceWindow(MTDialog):
     glyphExampleName = "a"
     fontListColumnDescriptions = [
         dict(title="openedImage",cell=ImageListCell(), width=50),
-        
+
         dict(title="include",cell=CheckBoxListCell(),width=30),
         dict(title="fontname", cell=VerticallyCenteredTextFieldCell.alloc().init(), editable=False),
         dict(title="glyphExample",cell=ImageListCell(), width=70),
-        
+
         ]
     designSpaceInfoKeys = [
         "path","number of masters","full compatibility"
@@ -112,16 +60,16 @@ class DesignSpaceWindow(MTDialog):
         self.initFontsGroup()
         self.initInfoGroup()
         self.initToolsGroup()
-        
+
         # setting the fontNameColumn // needed for resizing main window
-        
+
         fontPaneNSTable = self.fontPane.list.getNSTableView()
         for column in fontPaneNSTable.tableColumns():
             if column.headerCell().title() == "fontname":
                 self.fontNameColumn = column
             if column.headerCell().title() == "glyphExample":
                 self.glyphExampleColumn = column
-                    
+
         # building splitView
         descriptions = [
             dict(label="fonts",
@@ -195,11 +143,11 @@ class DesignSpaceWindow(MTDialog):
                         doubleClickCallback=self.doubleClickFontListCB,
                         selectionCallback=self.selectionFontListCB,
                         otherApplicationDropSettings=dropSettings)
-    
+
         # preparing even cooler look:
         fontPaneNSTable = self.fontPane.list.getNSTableView()
-        
-        
+
+
         # setting selection to None for now: (should be set to the Current Font, which should be stored as a separate attr)
         self.fontPane.list.setSelection([])
         # setting highlighting style (maybe it should be done in MTlist class)
@@ -207,8 +155,8 @@ class DesignSpaceWindow(MTDialog):
 
         self.fontPaneHeight = 200
         self.fontPaneMinHeight = self.txtH + p*2
-        
-        
+
+
 
     def initInfoGroup(self):
         x,y,p = self.padding
@@ -234,16 +182,16 @@ class DesignSpaceWindow(MTDialog):
 
         self.infoPaneHeight = 200
         self.infoPaneMinHeight = self.txtH + p*2
-        
-    
-        
+
+
+
     def initToolsGroup(self):
         x,y,p = self.padding
         self.toolsPane = Group((0, 0, -0, -0))
         self.toolsPane.caption = TextBox((x, y, 150,self.txtH), "tools")
         self.toolsPane.settingsBtn = GradientButton((-self.btnH-8,8,self.btnH,self.btnH),imageObject=settings_icon, bordered=False, callback=self.settingsBtnCB)
         y += self.txtH + p
-        
+
         toolbarItems = [
                 dict(objname="compatibilityTable", imageObject=table_icon, toolTip="comaptibility table", callback=self.compatibilityTableToolitemCB),
                 dict(objname="kinkManager", imageObject=kink_icon, toolTip="kink manager", callback=self.compatibilityTableToolitemCB),
@@ -256,13 +204,13 @@ class DesignSpaceWindow(MTDialog):
 
 
         self.toolsPaneHeight = self.btnH*3 + y+p
-        
+
     # ---------------------
     # Callbacks
     # ---------------------
     def currentGlyphChangedCB(self, info):
         print(info)
-        
+
     def doubleClickFontListCB(self, sender):
         item = sender.get()[sender.getSelection()[0]]
         selectedDefconFont = item.get("font")
@@ -278,11 +226,12 @@ class DesignSpaceWindow(MTDialog):
             del item["robofont.font"]
 
     def selectionFontListCB(self, sender):
-        item = sender.get()[sender.getSelection()[0]]
-        selectedRoboFontFont = item.get("robofont.font")
+        if sender.getSelection():
+            item = sender.get()[sender.getSelection()[0]]
+            selectedRoboFontFont = item.get("robofont.font")
 
-        if selectedRoboFontFont is not None:
-            switchMasterTo(selectedRoboFontFont)
+            if selectedRoboFontFont is not None:
+                switchMasterTo(selectedRoboFontFont)
 
     def currentFontChangeCB(self, sender):
         windowTypes = [w.windowName() for w in AppKit.NSApp().orderedWindows() if w.isVisible() if hasattr(w, "windowName")]
@@ -340,14 +289,14 @@ class DesignSpaceWindow(MTDialog):
         removeObserver(self, "fontDidOpen")
         removeObserver(self, "fontDidClose")
         removeObserver(self, "fontBecameCurrent")
-        
+
     def resizeDesignSpaceMainWindow(self, sender):
         x,y,p = self.padding
         wx,wy,ww,wh = sender.getPosSize()
         fontlistBreakingPoint = 260
         fontTable = self.fontNameColumn.tableView()
         infoNameColumn = self.infoPane.box.list.getNSTableView().tableColumns()[0]
-        
+
         itemSize = self.toolsPane.toolbar.itemSize
         self.toolsPane.toolbar.setPosSize((x,y,ww-2*p,itemSize))
         if self.fontNameColumn is not None:
@@ -355,7 +304,7 @@ class DesignSpaceWindow(MTDialog):
                 self.glyphExampleColumn.setResizable_(True)
                 self.glyphExampleColumn.setMaxWidth_(200)
                 self.glyphExampleColumn.setMinWidth_(40)
-                
+
                 self.fontNameColumn.setHidden_(True)
                 infoNameColumn.setHidden_(True)
                 bigRowHeight = 70
@@ -369,14 +318,13 @@ class DesignSpaceWindow(MTDialog):
                 infoNameColumn.setHidden_(False)
                 fontTable.sizeToFit()
                 fontTable.setRowHeight_(self.rowHeight)
-                
+
     # ---------------------
     # Customization of vanilla objects
     # ---------------------
 
     def dropFontListCallback(self, sender, dropInfo):
-        lineType =AppKit.NSTableViewSolidHorizontalGridLineMask
-        self.fontPane.list.getNSTableView().setGridStyleMask_(lineType)
+
         # some cool hovering options ;)
         isProposal = dropInfo["isProposal"]
         paths = dropInfo["data"]
@@ -390,6 +338,8 @@ class DesignSpaceWindow(MTDialog):
 
                 if not isProposal:
                     designSpaceLoaded = self.loadDesignSpace(path)
+                    lineType =AppKit.NSTableViewSolidHorizontalGridLineMask
+                    self.fontPane.list.getNSTableView().setGridStyleMask_(lineType)
                     if designSpaceLoaded:
                         self.fontPane.dropIcon.show(False)
                         self.items = self.prepareFontItems(self.designspace.fontMasters) ###TEST
@@ -397,11 +347,11 @@ class DesignSpaceWindow(MTDialog):
                         self.fontPane.list.getNSTableView().tableColumns()[1].sizeToFit()
                     else:
                         self.fontPane.dropIcon.setImage(imageObject=drop_icon)
-    
+
         return True
-        
-      
-    
+
+
+
     # ---------------------
     # Actions
     # ---------------------

@@ -171,8 +171,6 @@ class MTSheet(Sheet):
         if fullSizeContentView and osVersionCurrent >= osVersion10_10:
             self._window.setTitlebarAppearsTransparent_(True)
 
-
-
 class MTDialog(BaseWindowController):
     txtH = 17
     btnH = 24
