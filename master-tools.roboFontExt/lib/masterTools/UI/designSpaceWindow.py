@@ -215,22 +215,36 @@ class DesignSpaceWindow(MTDialog):
         item = sender.get()[sender.getSelection()[0]]
         selectedDefconFont = item.get("font")
         selectedRoboFontFont = item.get("robofont.font")
-
+        
+        # don't know why, but sometimes ["robofont.font"] changes into the NSNull
+        # here I'm checking if it is NSNull or NoneType or RFont
+        if hasattr(selectedRoboFontFont,"isNull"):
+            if selectedRoboFontFont.isNull() == 1:
+                item["robofont.font"] = None
+                selectedRoboFontFont = None
+                
         if selectedRoboFontFont is None:
             if self.currentFont is not None:
-                item["robofont.font"] = resizeOpenedFont(self.currentFont,selectedDefconFont.path)
+                item["robofont.font"] = resizeOpenedFont(self.currentFont, selectedDefconFont.path)
             else:
                 OpenFont(selectedDefconFont.path)
         else:
             selectedRoboFontFont.close()
-            del item["robofont.font"]
+            item["robofont.font"] = None
 
     def selectionFontListCB(self, sender):
         if sender.getSelection():
             item = sender.get()[sender.getSelection()[0]]
             selectedRoboFontFont = item.get("robofont.font")
-
-            if selectedRoboFontFont is not None:
+            
+            # don't know why, but sometimes ["robofont.font"] changes into the NSNull
+            # here I'm checking if it is NSNull or NoneType or RFont
+            if hasattr(selectedRoboFontFont,"isNull"):
+                if selectedRoboFontFont.isNull() == 1:
+                    item["robofont.font"] = None
+                    selectedRoboFontFont = None
+                    
+            if selectedRoboFontFont is not None: #and not isinstance(selectedRoboFontFont, AppKit.NSNull):
                 switchMasterTo(selectedRoboFontFont)
 
     def currentFontChangeCB(self, sender):
@@ -243,15 +257,27 @@ class DesignSpaceWindow(MTDialog):
             # there is a bug when setting selection
             # - here I'm getting rid of it
             setSelection = False
-
+        ########################################################
+        #TEST: hard test, checking when the font becames NSNull
+        ########################################################
+        # # # for item in self.designspace.fontMasters:
+        # # #     for key in item:
+        # # #         print(">>",key,">: ",item[key])
+        
+        ########################################################
         for i,item in enumerate(self.designspace.fontMasters):
             robofont = item.get("robofont.font")
+            print(robofont) ## TEST
             if robofont is not None:
-                if robofont == sender["font"]:
-                    self.currentFont = robofont
-                    # if setSelection:
-                    self.fontPane.list.setSelection([i])
-                    print("set, ",i)
+                if sender is not None:
+                    if robofont == sender["font"]:
+                        
+                        # if setSelection:
+                        self.fontPane.list.setSelection([i])
+                        self.currentFont = CurrentFont()
+                        
+                        break
+                else:
                     break
 
 
