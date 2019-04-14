@@ -3,7 +3,6 @@ from vanilla import HUDFloatingWindow, FloatingWindow, TextBox, Sheet, Window, G
 
 #rom AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSSize, NSArrayController, NSTableViewLastColumnOnlyAutoresizingStyle, NSLeftTextAlignment, NSRightTextAlignment, NSCenterTextAlignment, NSJustifiedTextAlignment, NSNaturalTextAlignment
 import AppKit
-from defconAppKit.windows.baseWindow import BaseWindowController
 from masterTools.UI.objcBase import *
 
 from vanilla.vanillaList import *
@@ -171,7 +170,7 @@ class MTSheet(Sheet):
         if fullSizeContentView and osVersionCurrent >= osVersion10_10:
             self._window.setTitlebarAppearsTransparent_(True)
 
-class MTDialog(BaseWindowController):
+class MTDialog(object):
     txtH = 17
     btnH = 24
     padding = (10,10,10)

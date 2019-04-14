@@ -1,16 +1,19 @@
+#import importlib
+import weakref
 from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
 from masterTools.misc.masterSwitcher import switchMasterTo, resizeOpenedFont
 from masterTools.misc import MasterToolsProcessor
 from masterTools.UI.objcBase import VerticallyCenteredTextFieldCell
-from masterTools.UI.vanillaSubClasses import MTDialog, MTlist, TMTextBox
-from masterTools.UI.glyphCellFactory import *
+from masterTools.UI.vanillaSubClasses import MTlist, MTDialog
 
+from masterTools.UI.glyphCellFactory import *
+from defconAppKit.windows.baseWindow import BaseWindowController
 from masterTools import copy2clip
 from mojo.UI import AccordionView
 from mojo.extensions import ExtensionBundle
 import os, AppKit,      sys
 from mojo.events import addObserver, removeObserver
-from mojo.roboFont import AllFonts, CurrentFont, OpenFont
+from mojo.roboFont import AllFonts, CurrentFont, OpenFont, OpenWindow
 
 
 
@@ -30,7 +33,7 @@ opened_font_icon = bundle.getResourceImage("opened-font-icon", ext='pdf')
 
 
 
-class DesignSpaceWindow(MTDialog):
+class DesignSpaceWindow(BaseWindowController, MTDialog):
     rowHeight = MTDialog.txtH + MTDialog.padding[0] * 2
     # winMinSize = (230,519)
     winMinSize = (160,519)
@@ -52,7 +55,11 @@ class DesignSpaceWindow(MTDialog):
         self.glyphExampleColumn = None
         self.currentFont = None
         self.fonts = []
-        self.w = self.window(self.winMinSize,"Master Tools",minSize=self.winMinSize,maxSize=self.winMaxSize)#, autosaveName = "com.rafalbuchner.masterTools.panes"
+        self.w = self.window(self.winMinSize,
+        "Master Tools",
+        minSize=self.winMinSize,
+        maxSize=self.winMaxSize,
+        autosaveName = "com.rafalbuchner.designspacewindow")#, autosaveName = "com.rafalbuchner.masterTools.panes"
 
         self.initObservers()
 
@@ -103,8 +110,12 @@ class DesignSpaceWindow(MTDialog):
         self.setUpBaseWindowBehavior()
         self.w.bind("close", self.closeDesignSpaceMainWindow)
         self.w.bind("resize", self.resizeDesignSpaceMainWindow)
+
         self.w.open()
+        self.w.vanillaWrapper = weakref.ref(self)
+        self.setUpBaseWindowBehavior()
         self.resizeDesignSpaceMainWindow(self.w)
+        
 
     def initObservers(self):
         addObserver(self, "currentFontChangeCB", "fontBecameCurrent")
@@ -150,6 +161,7 @@ class DesignSpaceWindow(MTDialog):
 
         # setting selection to None for now: (should be set to the Current Font, which should be stored as a separate attr)
         self.fontPane.list.setSelection([])
+        self.w.getNSWindow().makeFirstResponder_(fontPaneNSTable)
         # setting highlighting style (maybe it should be done in MTlist class)
         fontPaneNSTable.setSelectionHighlightStyle_(4)
 
@@ -432,7 +444,9 @@ class DesignSpaceWindow(MTDialog):
 
 
 def test():
-    DesignSpaceWindow()
+    import os
+
+    o = OpenWindow(DesignSpaceWindow)
 
 if __name__ == '__main__':
     test()
