@@ -9,7 +9,7 @@ from masterTools import copy2clip
 from mojo.UI import AccordionView
 from mojo.extensions import ExtensionBundle
 import os, AppKit,      sys
-from mojo.events import addObserver, removeObserver, publishEvent
+from mojo.events import addObserver, removeObserver
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont
 
 
@@ -215,14 +215,14 @@ class DesignSpaceWindow(MTDialog):
         item = self.designspace.fontMasters[sender.getSelection()[0]]
         selectedDefconFont = item.get("font")
         selectedRoboFontFont = item.get("robofont.font")
-
+        
         # don't know why, but sometimes ["robofont.font"] changes into the NSNull
         # here I'm checking if it is NSNull or NoneType or RFont
         if hasattr(selectedRoboFontFont,"isNull"):
             if selectedRoboFontFont.isNull() == 1:
                 item["robofont.font"] = None
                 selectedRoboFontFont = None
-
+                
         if selectedRoboFontFont is None:
             if self.currentFont is not None:
                 item["robofont.font"] = resizeOpenedFont(self.currentFont, selectedDefconFont.path)
@@ -236,14 +236,14 @@ class DesignSpaceWindow(MTDialog):
         if sender.getSelection():
             item = self.designspace.fontMasters[sender.getSelection()[0]]
             selectedRoboFontFont = item.get("robofont.font")
-
+            
             # don't know why, but sometimes ["robofont.font"] changes into the NSNull
             # here I'm checking if it is NSNull or NoneType or RFont
             if hasattr(selectedRoboFontFont,"isNull"):
                 if selectedRoboFontFont.isNull() == 1:
                     item["robofont.font"] = None
                     selectedRoboFontFont = None
-
+                    
             if selectedRoboFontFont is not None: #and not isinstance(selectedRoboFontFont, AppKit.NSNull):
                 switchMasterTo(selectedRoboFontFont)
 
@@ -263,7 +263,7 @@ class DesignSpaceWindow(MTDialog):
         # # # for item in self.designspace.fontMasters:
         # # #     for key in item:
         # # #         print(">>",key,">: ",item[key])
-
+        
         ########################################################
         for i,item in enumerate(self.designspace.fontMasters):
             robofont = item.get("robofont.font")
@@ -273,15 +273,15 @@ class DesignSpaceWindow(MTDialog):
                 if robofont.isNull() == 1:
                     item["robofont.font"] = None
                     robofont = None
-
+                    
             if robofont is not None:
                 if sender is not None:
                     if robofont == CurrentFont:
-
+                        
                         # if setSelection:
                         self.fontPane.list.setSelection([i])
                         self.currentFont = CurrentFont()
-
+                        
                         break
                 else:
                     break
@@ -304,7 +304,6 @@ class DesignSpaceWindow(MTDialog):
 
     def fontIsIncludedCB(self, sender):
         self.designspace.fontMasters = sender.get()
-        publishEvent("masterTools.designspaceUpdate", data=self.designspace)
 
     def compatibilityTableToolitemCB(self, sender):
         # checkbox functionality of btn in Tools Group
@@ -314,7 +313,7 @@ class DesignSpaceWindow(MTDialog):
 
 
     def reloadFontListCB(self, info):
-        # self.items = self.prepareFontItems(self.designspace.fontMasters) ###TEST
+        self.items = self.prepareFontItems(self.designspace.fontMasters) ###TEST
         self.fontPane.list.set(self.designspace.fontMasters)
         self.currentFontChangeCB(None)
 
@@ -375,8 +374,7 @@ class DesignSpaceWindow(MTDialog):
                     self.fontPane.list.getNSTableView().setGridStyleMask_(lineType)
                     if designSpaceLoaded:
                         self.fontPane.dropIcon.show(False)
-                        # self.items = self.prepareFontItems(self.designspace.fontMasters) ###TEST
-                        publishEvent("masterTools.designspaceUpdate", data=self.designspace)
+                        self.items = self.prepareFontItems(self.designspace.fontMasters) ###TEST
                         self.fontPane.list.set(self.designspace.fontMasters)
                         self.fontPane.list.getNSTableView().tableColumns()[1].sizeToFit()
                     else:
