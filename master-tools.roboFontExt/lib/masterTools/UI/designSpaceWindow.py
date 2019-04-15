@@ -33,7 +33,7 @@ opened_font_icon = bundle.getResourceImage("opened-font-icon", ext='pdf')
 
 
 
-class DesignSpaceWindow(BaseWindowController, MTDialog):
+class DesignSpaceWindow(MTDialog, BaseWindowController):
     rowHeight = MTDialog.txtH + MTDialog.padding[0] * 2
     # winMinSize = (230,519)
     winMinSize = (160,519)
@@ -429,19 +429,50 @@ class DesignSpaceWindow(BaseWindowController, MTDialog):
 
 
     def loadDesignSpace(self, path):
-        try:
-            self.designspace = MasterToolsProcessor()
-            # self.designspace.useVarlib = True
-            self.designspace.read(path)
-            self.designspace.loadFonts()
-            self.loadInfo()
-            print("designspace imported")
-            return True
-        except:
-            print("designspace wasn't imported")
-            return False
+        # try:
+        self.designspace = MasterToolsProcessor()
+        # self.designspace.useVarlib = True
+        self.designspace.read(path)
+        self.designspace.loadFonts()
+        self.loadInfo()
+        
+        Test(self.designspace)
+        
+        print("designspace imported")
+        return True
+        # except:
+        #     print("designspace wasn't imported")
+        #     return False
 
+from mojo.glyphPreview import GlyphPreview
+from mojo.roboFont import OpenWindow
+from vanilla import HUDFloatingWindow, List
+class Test:
+    def __init__(self, designspace):
+        # create a window
+        self.glyph = None
+        self.w = HUDFloatingWindow((400, 300), "Preview", minSize=(100, 100))
+        # add a GlyphPreview to the window
+        self.w.preview = GlyphPreview((100, 0, -0, -0))
 
+        # open the window
+        self.w.open()
+
+    def setGlyph(self, glyph):
+        # set the glyph in the GlyphPreview
+        self.w.preview.setGlyph(glyph)
+
+    def loadGlyph(self):
+        self.glyph = None
+        
+    def showPreviewCallback(self, sender):
+        # get selected glyph
+        self.loadGlyph()
+        # set preview in preview
+        if self.glyph is not None:
+            self.w.preview.setGlyph(self.glyph)
+
+# open the window with OpenWindow, so it cannot be opened twice
 
 def test():
     import os
