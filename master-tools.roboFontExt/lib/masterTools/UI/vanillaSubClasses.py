@@ -4,11 +4,13 @@ from vanilla import HUDFloatingWindow, FloatingWindow, TextBox, Sheet, Window, G
 #rom AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSSize, NSArrayController, NSTableViewLastColumnOnlyAutoresizingStyle, NSLeftTextAlignment, NSRightTextAlignment, NSCenterTextAlignment, NSJustifiedTextAlignment, NSNaturalTextAlignment
 import AppKit
 from masterTools.UI.objcBase import *
-
+from mojo.events import addObserver, removeObserver, publishEvent
 from vanilla.vanillaList import *
 from vanilla.vanillaBase import _breakCycles, _calcFrame, _setAttr, _delAttr, _flipFrame, \
         VanillaCallbackWrapper, VanillaError, VanillaBaseControl, osVersionCurrent, osVersion10_7, osVersion10_10
 from vanilla.py23 import python_method
+
+undockStr = "⎋"
 
 _textAlignmentMap = {
     "left":AppKit.NSLeftTextAlignment,
@@ -17,6 +19,7 @@ _textAlignmentMap = {
     "justified":AppKit.NSJustifiedTextAlignment,
     "natural":AppKit.NSNaturalTextAlignment,
 }
+
 class MTToolbar(Group):
     """
         items = [{
@@ -103,6 +106,7 @@ class MTToolbar(Group):
 
 
 class MTSheet(Sheet):
+    nsWindowClass = AppKit.NSPanel
     def __init__(self, posSize, parentWindow, title="", minSize=None, maxSize=None, textured=False,
                 autosaveName=None, closable=True, miniaturizable=True, initiallyVisible=True,
                 fullScreenMode=None, titleVisible=True, fullSizeContentView=False, screen=None):
@@ -111,7 +115,7 @@ class MTSheet(Sheet):
         self.parentWindow = parentWindow
         textured = bool(parentWindow.styleMask() & AppKit.NSTexturedBackgroundWindowMask)
 
-        mask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSTitledWindowMask | AppKit.NSBorderlessWindowMask
+        mask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSBorderlessWindowMask
         if closable:
             mask = mask | AppKit.NSClosableWindowMask
         if miniaturizable:
@@ -167,17 +171,111 @@ class MTSheet(Sheet):
             else:
                 self._window.setTitleVisibility_(AppKit.NSWindowTitleVisible)
         # full size content view
-        if fullSizeContentView and osVersionCurrent >= osVersion10_10:
-            self._window.setTitlebarAppearsTransparent_(True)
+        self._window.setTitleVisibility_(False)
+        self._window.setTitlebarAppearsTransparent_(True)
+
+        self.title = TextBox((0,2,-0,17),title,alignment="center",sizeStyle="small")
+
+# go to objc folder
+class MTInteractiveSBox(AppKit.NSBox):
+    count = 0
+    rightMenu = None
+
+    def worksWhenModal(self):
+        return True
+
+    def menuForEvent_(self,event):
+
+        origin = self.frameOrigin()
+        point = event.locationInWindow()
+        x,y = (point.x-origin.x,point.y-origin.y)
+        publishEvent("MT.prevRightMouseDown", cursorpos=(x,y))
+
+        if self.rightMenu is not None:
+            return self.rightMenu
+
+    def mouseDragged_(self,event):
+        # # print(event)
+        origin = self.frameOrigin()
+        w,h = (self.frameSize().width,self.frameSize().height)
+        point = event.locationInWindow()
+        rect = AppKit.NSMakeRect(origin.x,origin.y,w,h)
+        self.count += 1
+        if self.mouse_inRect_(point,rect):
+            point = event.locationInWindow()
+            x,y = (point.x-origin.x,point.y-origin.y)
+            publishEvent("MT.prevMouseDragged", cursorpos=(x,y))
+
+
+# go to objc folder
+class MTPanel(AppKit.NSPanel):
+    count = 0
+    def mouseDragged_(self,event):
+        # # print(event)
+        origin = self.frameOrigin()
+        w,h = (self.frame().size.width,self.frame().size.height)
+        point = event.locationInWindow()
+        rect = AppKit.NSMakeRect(origin.x,origin.y,w,h)
+        self.count += 1
+
+        point = event.locationInWindow()
+        x,y = (point.x-origin.x,point.y-origin.y)
+
+# go to objc folder
+class MTWindow(AppKit.NSWindow):
+    def validateMenuItem_(self, menuItem):
+        return True
+
+class MTHUDFloatingWindow(Window):
+    #appearance = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameAqua)
+    Window.nsWindowClass = MTWindow
+    appearance = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameDarkAqua)
+    Window.nsWindowStyleMask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSTitledWindowMask | AppKit.NSBorderlessWindowMask
+
+
+    def __init__(self, posSize, title="", minSize=None, maxSize=None, textured=False,
+                autosaveName=None, closable=True, miniaturizable=True, initiallyVisible=True,
+                fullScreenMode=None, titleVisible=True, fullSizeContentView=False, screen=None):
+        super().__init__(posSize, title=title, minSize=minSize, maxSize=maxSize, textured=textured,
+                    autosaveName=autosaveName, closable=closable, miniaturizable=miniaturizable, initiallyVisible=initiallyVisible,
+                    fullScreenMode=fullScreenMode, titleVisible=titleVisible, fullSizeContentView=fullSizeContentView, screen=screen)
+        self._window.setAppearance_(self.appearance)
+
+
+
+
+# class MTHUDFloatingWindow(HUDFloatingWindow):
+#     nsWindowClass = MTPanel
+#     def __init__(self, posSize, title="", minSize=None, maxSize=None, textured=False, autosaveName=None, closable=True, initiallyVisible=True, screen=None):
+#         super().__init__(posSize, title, minSize, maxSize, textured, autosaveName, closable, initiallyVisible, screen)
+#         self.getNSWindow().setHidesOnDeactivate_(False) # deactivate the hiding, when the window is out of focus
+#         self.getNSWindow().setFloatingPanel_(False) # deactivate the hiding, when the window is out of focus
+
 
 class MTDialog(object):
+    """
+    in subclass you have to describe self.w as instance of MTHUDFloatingWindow (you can use class attr window for it)
+    """
     txtH = 17
     btnH = 24
     padding = (10,10,10)
-    window = HUDFloatingWindow
+    window = MTHUDFloatingWindow
     settingsSheet = MTSheet
     toolbar = MTToolbar
-
+    # def setMainWindowBehaviour(self):
+    #     addObserver(self, "rfBecameActive", "applicationDidBecomeActive")
+    #     addObserver(self, "rfWillResignActive", "applicationWillResignActive")
+    #     self.w.bind("close", self.windowWillClose)
+    #
+    # def rfBecameActive(self, notification):
+    #     self.w.getNSWindow().setBecomesKeyOnlyIfNeeded_(False)
+    #
+    # def rfWillResignActive(self, notification):
+    #     self.w.getNSWindow().setBecomesKeyOnlyIfNeeded_(True)
+    #
+    # def windowWillClose(self, notification):
+    #     removeObserver(self, "applicationDidBecomeActive")
+    #     removeObserver(self, "applicationWillResignActive")
 
 
 

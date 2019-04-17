@@ -1,7 +1,27 @@
 from ufoProcessor import *
-
+from mojo.roboFont import AllFonts, RFont
 
 class MasterToolsProcessor(DesignSpaceProcessor):
+    # fontClass = RFont
+    # layerClass = RLayer
+    # glyphClass = RGlyph
+    # libClass = RLib
+    # glyphContourClass = RContour
+    # glyphPointClass = RPoint
+    # glyphComponentClass = RComponent
+    # glyphAnchorClass = RAnchor
+    # kerningClass = RKerning
+    # groupsClass = RGroups
+    # infoClass = RInfo
+    # featuresClass = RFeatures
+
+    def _instantiateFont(self, path):
+        for font in AllFonts():
+            if font.path == path and font.path is not None:
+                return font
+        return RFont(path, showInterface=False)
+
+
     def getIncludedMaster(self, currfont):
         includedFonts = [item for item in self.fontMasters if item["include"]]
         index = [item[font].path for item in includedFonts].index(currfont.path)
