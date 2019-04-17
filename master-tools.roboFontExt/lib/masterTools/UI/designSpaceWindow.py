@@ -2,12 +2,14 @@
 from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
 from masterTools.misc.masterSwitcher import switchMasterTo, resizeOpenedFont
 from masterTools.misc import MasterToolsProcessor
-from masterTools.UI.objcBase import VerticallyCenteredTextFieldCell
-from masterTools.UI.vanillaSubClasses import MTlist, MTDialog, MTInteractiveSBox
-
+from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
+from masterTools.UI.vanillaSubClasses import MTlist, MTDialog, MTInteractiveSBox, MTGlyphPreview
+from masterTools.UI.settings import Settings
 from masterTools.UI.glyphCellFactory import *
 from defconAppKit.windows.baseWindow import BaseWindowController
-from masterTools import copy2clip
+from masterTools import copy2clip, getDev
+
+
 from mojo.UI import AccordionView
 from mojo.extensions import ExtensionBundle
 import os, AppKit,      sys
@@ -16,7 +18,16 @@ from mojo.roboFont import AllFonts, CurrentFont, OpenFont, OpenWindow
 from mojo.events import addObserver
 
 
-bundle = ExtensionBundle("master-tools")
+
+if getDev():
+    currpath = os.path.join( os.path.dirname( __file__ ), '../..' )
+    sys.path.append(currpath)
+    sys.path = list(set(sys.path))
+    pathForBundle = os.path.abspath(os.path.join(__file__ ,"../../../.."))
+    resourcePathForBundle = os.path.join(pathForBundle, "resources")
+    bundle = ExtensionBundle(path=pathForBundle, resourcesName=resourcePathForBundle)
+else:
+    bundle = ExtensionBundle("master-tools")
 table_icon = bundle.getResourceImage("table-icon", ext='pdf')
 drop_icon = bundle.getResourceImage("drop-icon", ext='pdf')
 drop_hover_icon = bundle.getResourceImage("drop-hover-icon", ext='pdf')
@@ -25,11 +36,11 @@ glyphs_icon = bundle.getResourceImage("glyphs-icon", ext='pdf')
 problem_icon = bundle.getResourceImage("problem-icon", ext='pdf')
 settings_icon = bundle.getResourceImage("settings-icon", ext='pdf')
 closeIcon = bundle.getResourceImage("close-icon", ext='pdf')
-
 closed_font_icon = bundle.getResourceImage("closed-font-icon", ext='pdf')
 opened_font_icon = bundle.getResourceImage("opened-font-icon", ext='pdf')
+setTemplateImages(table_icon, drop_icon, drop_hover_icon, kink_icon, glyphs_icon, problem_icon, settings_icon, closeIcon, closed_font_icon, opened_font_icon)
 
-
+uiSettings = Settings().getDict()
 
 
 class DesignSpaceWindow(MTDialog, BaseWindowController):
@@ -37,12 +48,12 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # winMinSize = (230,519)
     winMinSize = (160,519)
     winMaxSize = (1180,4000)
-    glyphExampleName = "a"
+    glyphExampleName = "A"
     fontListColumnDescriptions = [
         dict(title="openedImage",cell=ImageListCell(), width=50),
 
         dict(title="include",cell=CheckBoxListCell(),width=30),
-        dict(title="fontname", cell=VerticallyCenteredTextFieldCell.alloc().init(), editable=False),
+        dict(title="fontname", cell=MTVerticallyCenteredTextFieldCell.alloc().init(), editable=False),
         dict(title="glyphExample",cell=ImageListCell(), width=70),
 
         ]
@@ -60,7 +71,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         "Master Tools",
         minSize=self.winMinSize,
         maxSize=self.winMaxSize,
-        autosaveName = "com.rafalbuchner.designspacewindow")#, autosaveName = "com.rafalbuchner.masterTools.panes"
+        autosaveName="com.rafalbuchner.designspacewindow",
+        darkMode=uiSettings["darkMode"])
 
 
 
@@ -468,263 +480,15 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         #     print("designspace wasn't imported")
         #     return False
 
-from mojo.glyphPreview import GlyphPreview
-from mojo.roboFont import OpenWindow, RGlyph, CurrentGlyph
-from fontTools.designspaceLib import InstanceDescriptor
-from mojo.UI import MenuBuilder
-from vanilla import Slider
-from vanilla.vanillaBase import VanillaCallbackWrapper
-from copy import deepcopy
-
-class MTGlyphPreview(Box):
-    """
-        NSView that shows the preview of the glyph in the given designspace
-        
-        !!! It doesn't know what to do if there is incompatibility !
-    """
-    nsBoxClass = MTInteractiveSBox
-    check = "•"
-    roundLocations = True
-    def __init__(self, posSize, title=None):
-        super(MTGlyphPreview, self).__init__(posSize, title=title)
-        self.glyphName = None
-        self.rightClickGroup = []
-        self.windowAxes = {"horizontal axis":None, "vertical axis":None,}
-        self.currentLoc = {}
-        
-        self.glyphView = GlyphPreview((0,0,-0,-0))
-        self.horAxisInfo = self.textBox((8,-20,0,12),f'horizontal axis',alignment="left",textColor=(0,1,0,1),fontSize=("Monaco",10))
-        rotate = self.horAxisInfo.getNSTextField().setFrameRotation_(90)
-
-        self.verAxisInfo = self.textBox((10,-12,0,12),f'vertical axis',alignment="left",textColor=(0,1,0,1),fontSize=("Monaco",10))
-        self.interpolationProblemMessage = self.textBox((0,0,0,0),f'<Possible Interpolation Error>',alignment="center",textColor=(1,0,0,1),fontSize=("Monaco",10))
-        self.interpolationProblemMessage.show(False)
-        addObserver(self, "locChangedCallback","MT.prevMouseDragged")
-        addObserver(self, "rightMouseDownCallback","MT.prevRightMouseDown")
-        addObserver(self, "currentGlyphChangedCallback", "currentGlyphChanged")
-        
-    def updateInfo(self):
-        
-        horValue = self.currentLoc.get(self.windowAxes["horizontal axis"])
-        self.horAxisInfo.set(f'{self.windowAxes["horizontal axis"]} - {horValue}')
-        verValue = self.currentLoc.get(self.windowAxes["vertical axis"])
-        self.verAxisInfo.set(f'{self.windowAxes["vertical axis"]} - {verValue}')
-        
-    def textBox(self,posSize,title,textColor,fontSize,alignment="left"):
-        color =AppKit.NSColor.colorWithCalibratedRed_green_blue_alpha_(*textColor)
-        font = AppKit.NSFont.fontWithName_size_(*fontSize)
-        #cell.setTextColor_(color)
-        txtBox = TextBox(posSize,title,alignment=alignment)
-        nsTextFiled = txtBox.getNSTextField()
-        nsTextFiled.setTextColor_(color)
-        nsTextFiled.setFont_(font)
-        return txtBox
-        
-    def currentGlyphChangedCallback(self,sender):
-        self.glyphName = CurrentGlyph().name
-        self.interpolationProblemMessage.setTitle(f'glyph "{self.glyphName}" <Possible Interpolation Error>')
-        
-        self.setGlyph(self.glyphName, self.currentLoc)
-        
-    def rightMouseDownCallback(self,sender):
-        for l in self.rightClickGroup:
-            l.setSelection([])
-
-    def menuItemCallback(self,sender):
-        if sender.getSelection():
-            curr_axisList = sender
-            if curr_axisList.axis == "vertical axis":
-                second_axisList = self.rightClickGroup[0]
-            elif curr_axisList.axis == "horizontal axis":
-                second_axisList = self.rightClickGroup[1]
-            rowIndex = curr_axisList.getSelection()[0]
-            allitems = curr_axisList.get()
-            item = allitems[rowIndex]
-            # popupbutton imitation:
-            itemChoosenAxisName = item[curr_axisList.axis]
-            if item["set"] != self.check:                
-                item["set"] = self.check
-                self.windowAxes[curr_axisList.axis] = itemChoosenAxisName
-            else:
-                item["set"] = ""
-                self.windowAxes[curr_axisList.axis] = None
-            for other_index,other_item in enumerate(allitems):
-                if other_index == rowIndex:
-                    continue
-                other_item["set"] = ""
-            
-            
-            secondAllItems = second_axisList.get()
-
-            # if the same axis tag is choosen in the second list
-            # deselect it from the second list
-            for item in secondAllItems:
-                if item['set'] == self.check:
-                    self.windowAxes[second_axisList.axis] = item[second_axisList.axis]
-                if item[second_axisList.axis] == itemChoosenAxisName:
-                    item['set'] = ""
-                    self.windowAxes[second_axisList.axis]=None
-            curr_axisList.set(allitems)
-            second_axisList.setSelection([])
-            curr_axisList.setSelection([])
-            self.updateInfo()
-
-    
-    def sCB(self, sender):
-        print(">HURRA<")
-        
-    def _setContextualMenu(self):
-        y,x,p = (10,10,10)
-        axisPopUpMenuItem = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("axisPopUp", '', '')
-        columnDescriptions_hor = [{"title": "set","width":8},{"title": "horizontal axis"}]
-        columnDescriptions_ver = [{"title": "set","width":8},{"title": "vertical axis"}]
-        # group is going to be a container for
-        # two lists, that will behave 
-        # like a popup buttons
-        group = Group((0,0,220+3*p,100)) 
-        group._list_hor = MTlist((x, y, 110, -p), self.axesList_hor, columnDescriptions=columnDescriptions_hor,doubleClickCallback=self.menuItemCallback,transparentBackground=True,)
-        group._list_hor.axis = "horizontal axis"
-        group._list_ver = MTlist((x+110+p, y, 110, -p), self.axesList_ver, columnDescriptions=columnDescriptions_ver,doubleClickCallback=self.menuItemCallback,transparentBackground=True,)
-        group._list_ver.axis = "vertical axis"
-        self.rightClickGroup = [group._list_hor,group._list_ver]
-        # setting the appearance of the lists
-        for l in self.rightClickGroup:
-            l.setSelection([])
-            NSTable = l.getNSTableView()
-            NSTable.setSelectionHighlightStyle_(1)
-            NSTable.tableColumns()[0].headerCell().setTitle_("")
-        sliderItems = []
-                
-        items =  []
-        for i,item in enumerate(self.axesList_ver):
-            axis_name = item["vertical axis"]
-            sliderMenuItem = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(axis_name, '', '')
-            
-            minValue = self.axesInfo[axis_name]["minimum"]
-            maxValue = self.axesInfo[axis_name]["maximum"]
-            value = self.currentLoc[axis_name]
-            group2 = Group((0,0,220+3*p,50))
-            group2.title = TextBox((10,0,-0,20),axis_name)
-            group2.slider = Slider((10, 20, 220+p, 30), callback=self.sCB,minValue=minValue,maxValue=maxValue,value=value) 
-            group2.slider.axis = axis_name
-            view = group2.getNSView()
-            view.setFrame_(((0, 100), (220+3*p, 50)))
-            sliderMenuItem.setView_(view)
-            items.append(sliderMenuItem)
-                            
-        # Building NSMenu
-        view = group.getNSView()
-        axisPopUpMenuItem.setView_(view)
-        
-        builder = MenuBuilder([
-             axisPopUpMenuItem,
-         ]+[item for item in items])
-        
-        self.menu = builder.getMenu()
-        self.menu.setMinimumWidth_(120)
-        self.menu.setAutoenablesItems_(False)
-        view.setFrame_(((0, 0), (220+3*p, 2*p+23+23*len(self.axesList_hor))))
-        # # viewsliders.setFrame_(((0, 0), (220+3*p, sliderGroupHeight)))
-        sliderMenuItem.setTarget_(self.getNSBox())
-        self.getNSBox().rightMenu = self.menu
 
 
-    def setDesignSpace(self, designspace):
-        
-        self.designspace = designspace
-        self.glyphName = "a"
-        self.axesInfo = {}
-        for axisInfo in self.designspace.getSerializedAxes():
-            info = {}
-            info["minimum"] = axisInfo["minimum"]
-            info["maximum"] = axisInfo["maximum"]
-            info["range"] = axisInfo["maximum"]-axisInfo["minimum"]
-            
-            self.axesInfo[axisInfo['name']] = info
-        if designspace.findDefault() is not None:
-            self.currentLoc = designspace.findDefault().location
-            self.lastAllLocations = deepcopy(designspace.findDefault().location)
-        else:
-            self.currentLoc = {}
-            self.lastAllLocations = {name:0 for name in self.axesInfo.keys()}
-        self.axesList_hor = []
-        self.axesList_ver = []
-        for axis in designspace.getSerializedAxes():
-            self.axesList_hor += [{"set":"","horizontal axis":axis['name']}]
-            self.axesList_ver += [{"set":"","vertical axis":axis['name']}]
-        self.getDefaultLoc = 0 # later replace it with special finding default loc
-        self._setContextualMenu()
-        self.setGlyph(self.glyphName,self.currentLoc)
 
-    def setGlyph(self,name, loc=None):
-        if loc is None or loc == {}:
-            return
-        if  name is None:
-            return
-        for axisname in loc:
-            self.lastAllLocations[axisname] = loc[axisname]
-
-        self.updateInfo()
-        self.glyphView.setGlyph(self._getInterpolation(name,self.lastAllLocations))
-                
-    def locChangedCallback(self, data):
-        x,y = data["cursorpos"]
-        w,h = (self.getNSBox().frameSize().width,self.getNSBox().frameSize().height)
-        horizontalAxisName = self.windowAxes["horizontal axis"]
-        verticalAxisName   = self.windowAxes["vertical axis"]
-        horizontalAxisValue = None
-        verticalAxisValue = None
-        currentLoc = {}
-        
-        if horizontalAxisName is not None:
-            axis_info = self.axesInfo[horizontalAxisName]
-            horizontalAxisValue = axis_info["minimum"] + x/w * axis_info["range"]
-            if self.roundLocations: horizontalAxisValue = round(horizontalAxisValue)
-            
-            
-        if verticalAxisName is not None:
-            axis_info = self.axesInfo[verticalAxisName]
-            verticalAxisValue = axis_info["minimum"] + y/h * axis_info["range"]
-            if self.roundLocations: verticalAxisValue = round(verticalAxisValue)
-        if horizontalAxisValue is not None:
-            currentLoc[horizontalAxisName] = horizontalAxisValue
-        if verticalAxisValue is not None:
-            currentLoc[verticalAxisName] = verticalAxisValue
-
-        self.currentLoc = currentLoc
-        self.setGlyph(self.glyphName, self.currentLoc)
-
-    def _getInterpolation(self,name,loc):
-        instance = None
-        for master in self.designspace.fontMasters:
-            if loc == master['designSpacePosition']:
-                instance = master['font']
-                break
-
-        if instance is None:            
-            instanceDescriptor = InstanceDescriptor()
-            instanceDescriptor.location = loc
-
-            instance = self.designspace.makeInstance(instanceDescriptor, glyphNames=[name],pairs=[], bend=True)
-        if name in instance.keys():
-            self.interpolationProblemMessage.show(False)
-            self.glyphView.show(True)
-            return instance[name]
-        else:
-            self.interpolationProblemMessage.show(True)
-            self.glyphView.show(False)
-            return instance[name]
-
-    def mainWindowClose(self):
-        removeObserver(self, "MT.prevMouseDragged")
-        removeObserver(self, "MT.prevRightMouseDown")
-        removeObserver(self, "currentGlyphChanged")
 
 
 
 def test():
     import os
-    path = "path/to/some/design/space"
+    #path = '/Users/rafalbuchner/Documents/repos/scripts/RoboFont3.0/+GOOGLE/master-tools/test_designSpace/mutatorSans-master/MutatorSans.designspace'
     o = OpenWindow(DesignSpaceWindow)#, path)
 
 if __name__ == '__main__':

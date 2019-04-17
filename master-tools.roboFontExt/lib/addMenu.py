@@ -2,6 +2,21 @@ import os
 import sys
 from AppKit import NSApp, NSMenu, NSMenuItem
 from lib.UI.fileBrowser import RFPathItem
+import mojo
+
+# from designspace editor by Letterror
+
+DEVELOP = True
+
+if DEVELOP:
+    pathForBundle = os.path.dirname(__file__)
+    #sys.path = list(set(sys.path))
+    resourcePathForBundle = os.path.join(os.path.dirname(pathForBundle), "resources")
+    masterToolsBundle = mojo.extensions.ExtensionBundle(path=pathForBundle, resourcesName=resourcePathForBundle)
+else:
+    masterToolsBundle = mojo.extensions.ExtensionBundle("master-tools")
+
+####
 
 def add_menu(name, path):
     # create a new menu

@@ -6,7 +6,7 @@ from defconAppKit.tools.drawing import colorToNSColor
 GlyphCellHeaderHeight = 14
 GlyphCellMinHeightForHeader = 40
 
-glyphColor = NSColor.whiteColor()
+glyphColor = NSColor.secondaryLabelColor()
 cellBackgroundColor = NSColor.clearColor()
 cellHeaderBaseColor = NSColor.colorWithCalibratedWhite_alpha_(0.968, 1.0)
 cellHeaderHighlightColor = NSColor.colorWithCalibratedWhite_alpha_(0.98, 1.0)

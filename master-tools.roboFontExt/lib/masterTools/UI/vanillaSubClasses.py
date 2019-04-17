@@ -6,11 +6,13 @@ import AppKit
 from masterTools.UI.objcBase import *
 from mojo.events import addObserver, removeObserver, publishEvent
 from vanilla.vanillaList import *
-from vanilla.vanillaBase import _breakCycles, _calcFrame, _setAttr, _delAttr, _flipFrame, \
-        VanillaCallbackWrapper, VanillaError, VanillaBaseControl, osVersionCurrent, osVersion10_7, osVersion10_10
+from vanilla.vanillaBase import _breakCycles, _calcFrame, VanillaCallbackWrapper, VanillaError, osVersionCurrent, osVersion10_14, osVersion10_7
 from vanilla.py23 import python_method
-
-undockStr = "⎋"
+from mojo.glyphPreview import GlyphPreview
+from mojo.roboFont import OpenWindow, RGlyph, CurrentGlyph
+from fontTools.designspaceLib import InstanceDescriptor
+from mojo.UI import MenuBuilder
+from vanilla import Slider
 
 _textAlignmentMap = {
     "left":AppKit.NSLeftTextAlignment,
@@ -19,6 +21,253 @@ _textAlignmentMap = {
     "justified":AppKit.NSJustifiedTextAlignment,
     "natural":AppKit.NSNaturalTextAlignment,
 }
+
+class MTGlyphPreview(Box):
+    """
+        NSView that shows the preview of the glyph in the given designspace
+
+        !!! It doesn't know what to do if there is incompatibility !
+    """
+    nsBoxClass = MTInteractiveSBox
+    check = "•"
+    roundLocations = True
+    def __init__(self, posSize, title=None):
+        super(MTGlyphPreview, self).__init__(posSize, title=title)
+        self.glyphName = None
+        self.rightClickGroup = []
+        self.windowAxes = {"horizontal axis":None, "vertical axis":None,}
+        self.currentLoc = {}
+
+        self.glyphView = GlyphPreview((0,0,-0,-0))
+        self.horAxisInfo = self.textBox((8,-20,0,12),f'horizontal axis',alignment="left",textColor=AppKit.NSColor.systemGreenColor(),fontSize=("Monaco",10))
+        rotate = self.horAxisInfo.getNSTextField().setFrameRotation_(90)
+
+        self.verAxisInfo = self.textBox((10,-12,0,12),f'vertical axis',alignment="left",textColor=AppKit.NSColor.systemGreenColor(),fontSize=("Monaco",10))
+        self.interpolationProblemMessage = self.textBox((0,0,0,0),f'<Possible Interpolation Error>',alignment="center",textColor=(1,0,0,1),fontSize=("Monaco",10))
+        self.interpolationProblemMessage.show(False)
+        addObserver(self, "locChangedCallback","MT.prevMouseDragged")
+        addObserver(self, "rightMouseDownCallback","MT.prevRightMouseDown")
+        addObserver(self, "currentGlyphChangedCallback", "currentGlyphChanged")
+
+    def updateInfo(self):
+
+        horValue = self.currentLoc.get(self.windowAxes["horizontal axis"])
+        self.horAxisInfo.set(f'{self.windowAxes["horizontal axis"]} - {horValue}')
+        verValue = self.currentLoc.get(self.windowAxes["vertical axis"])
+        self.verAxisInfo.set(f'{self.windowAxes["vertical axis"]} - {verValue}')
+
+    def textBox(self,posSize,title,textColor,fontSize,alignment="left"):
+        if isinstance(textColor,tuple):
+            color =AppKit.NSColor.colorWithCalibratedRed_green_blue_alpha_(*textColor)
+        else:
+            color = textColor
+        font = AppKit.NSFont.fontWithName_size_(*fontSize)
+        #cell.setTextColor_(color)
+        txtBox = TextBox(posSize,title,alignment=alignment)
+        nsTextFiled = txtBox.getNSTextField()
+        nsTextFiled.setTextColor_(color)
+        nsTextFiled.setFont_(font)
+        return txtBox
+
+    def currentGlyphChangedCallback(self,sender):
+        self.glyphName = CurrentGlyph().name
+        self.interpolationProblemMessage.setTitle(f'glyph "{self.glyphName}" <Possible Interpolation Error>')
+
+        self.setGlyph(self.glyphName, self.currentLoc)
+
+    def rightMouseDownCallback(self,sender):
+        for l in self.rightClickGroup:
+            l.setSelection([])
+
+    def menuItemCallback(self,sender):
+        if sender.getSelection():
+            curr_axisList = sender
+            if curr_axisList.axis == "vertical axis":
+                second_axisList = self.rightClickGroup[0]
+            elif curr_axisList.axis == "horizontal axis":
+                second_axisList = self.rightClickGroup[1]
+            rowIndex = curr_axisList.getSelection()[0]
+            allitems = curr_axisList.get()
+            item = allitems[rowIndex]
+            # popupbutton imitation:
+            itemChoosenAxisName = item[curr_axisList.axis]
+            if item["set"] != self.check:
+                item["set"] = self.check
+                self.windowAxes[curr_axisList.axis] = itemChoosenAxisName
+            else:
+                item["set"] = ""
+                self.windowAxes[curr_axisList.axis] = None
+            for other_index,other_item in enumerate(allitems):
+                if other_index == rowIndex:
+                    continue
+                other_item["set"] = ""
+
+
+            secondAllItems = second_axisList.get()
+
+            # if the same axis tag is choosen in the second list
+            # deselect it from the second list
+            for item in secondAllItems:
+                if item['set'] == self.check:
+                    self.windowAxes[second_axisList.axis] = item[second_axisList.axis]
+                if item[second_axisList.axis] == itemChoosenAxisName:
+                    item['set'] = ""
+                    self.windowAxes[second_axisList.axis]=None
+            curr_axisList.set(allitems)
+            second_axisList.setSelection([])
+            curr_axisList.setSelection([])
+            self.updateInfo()
+
+
+    def sCB(self, sender):
+        print(">HURRA<")
+
+    def _setContextualMenu(self):
+        y,x,p = (10,10,10)
+        axisPopUpMenuItem = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("axisPopUp", '', '')
+        columnDescriptions_hor = [{"title": "set","width":8},{"title": "horizontal axis"}]
+        columnDescriptions_ver = [{"title": "set","width":8},{"title": "vertical axis"}]
+        # group is going to be a container for
+        # two lists, that will behave
+        # like a popup buttons
+        group = Group((0,0,220+3*p,100))
+        group._list_hor = MTlist((x, y, 110, -p), self.axesList_hor, columnDescriptions=columnDescriptions_hor,doubleClickCallback=self.menuItemCallback,transparentBackground=True,)
+        group._list_hor.axis = "horizontal axis"
+        group._list_ver = MTlist((x+110+p, y, 110, -p), self.axesList_ver, columnDescriptions=columnDescriptions_ver,doubleClickCallback=self.menuItemCallback,transparentBackground=True,)
+        group._list_ver.axis = "vertical axis"
+        self.rightClickGroup = [group._list_hor,group._list_ver]
+        # setting the appearance of the lists
+        for l in self.rightClickGroup:
+            l.setSelection([])
+            NSTable = l.getNSTableView()
+            NSTable.setSelectionHighlightStyle_(1)
+            NSTable.tableColumns()[0].headerCell().setTitle_("")
+        sliderItems = []
+
+        items =  []
+        for i,item in enumerate(self.axesList_ver):
+            axis_name = item["vertical axis"]
+            sliderMenuItem = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(axis_name, '', '')
+
+            minValue = self.axesInfo[axis_name]["minimum"]
+            maxValue = self.axesInfo[axis_name]["maximum"]
+            value = self.currentLoc[axis_name]
+            group2 = Group((0,0,220+3*p,50))
+            group2.title = TextBox((10,0,-0,20),axis_name)
+            group2.slider = Slider((10, 20, 220+p, 30), callback=self.sCB,minValue=minValue,maxValue=maxValue,value=value)
+            group2.slider.axis = axis_name
+            view = group2.getNSView()
+            view.setFrame_(((0, 100), (220+3*p, 50)))
+            sliderMenuItem.setView_(view)
+            items.append(sliderMenuItem)
+
+        # Building NSMenu
+        view = group.getNSView()
+        axisPopUpMenuItem.setView_(view)
+
+        builder = MenuBuilder([
+             axisPopUpMenuItem,
+         ]+[item for item in items])
+
+        self.menu = builder.getMenu()
+        self.menu.setMinimumWidth_(120)
+        self.menu.setAutoenablesItems_(False)
+        view.setFrame_(((0, 0), (220+3*p, 2*p+23+23*len(self.axesList_hor))))
+        # # viewsliders.setFrame_(((0, 0), (220+3*p, sliderGroupHeight)))
+        sliderMenuItem.setTarget_(self.getNSBox())
+        self.getNSBox().rightMenu = self.menu
+
+
+    def setDesignSpace(self, designspace):
+
+        self.designspace = designspace
+        self.glyphName = "A"
+        self.axesInfo = {}
+        for axisInfo in self.designspace.getSerializedAxes():
+            info = {}
+            info["minimum"] = axisInfo["minimum"]
+            info["maximum"] = axisInfo["maximum"]
+            info["range"] = axisInfo["maximum"]-axisInfo["minimum"]
+
+            self.axesInfo[axisInfo['name']] = info
+        if designspace.findDefault() is not None:
+            self.currentLoc = designspace.findDefault().location
+            self.lastAllLocations = designspace.findDefault().location
+        else:
+            self.currentLoc = {}
+            self.lastAllLocations = {name:0 for name in self.axesInfo.keys()}
+        self.axesList_hor = []
+        self.axesList_ver = []
+        for axis in designspace.getSerializedAxes():
+            self.axesList_hor += [{"set":"","horizontal axis":axis['name']}]
+            self.axesList_ver += [{"set":"","vertical axis":axis['name']}]
+        self.getDefaultLoc = 0 # later replace it with special finding default loc
+        self._setContextualMenu()
+        self.setGlyph(self.glyphName,self.currentLoc)
+
+    def setGlyph(self,name, loc=None):
+        if loc is None or loc == {}:
+            return
+        if  name is None:
+            return
+        for axisname in loc:
+            self.lastAllLocations[axisname] = loc[axisname]
+
+        self.updateInfo()
+        self.glyphView.setGlyph(self._getInterpolation(name,self.lastAllLocations))
+
+    def locChangedCallback(self, data):
+        x,y = data["cursorpos"]
+        w,h = (self.getNSBox().frameSize().width,self.getNSBox().frameSize().height)
+        horizontalAxisName = self.windowAxes["horizontal axis"]
+        verticalAxisName   = self.windowAxes["vertical axis"]
+        horizontalAxisValue = None
+        verticalAxisValue = None
+        currentLoc = {}
+
+        if horizontalAxisName is not None:
+            axis_info = self.axesInfo[horizontalAxisName]
+            horizontalAxisValue = axis_info["minimum"] + x/w * axis_info["range"]
+            if self.roundLocations: horizontalAxisValue = round(horizontalAxisValue)
+
+
+        if verticalAxisName is not None:
+            axis_info = self.axesInfo[verticalAxisName]
+            verticalAxisValue = axis_info["minimum"] + y/h * axis_info["range"]
+            if self.roundLocations: verticalAxisValue = round(verticalAxisValue)
+        if horizontalAxisValue is not None:
+            currentLoc[horizontalAxisName] = horizontalAxisValue
+        if verticalAxisValue is not None:
+            currentLoc[verticalAxisName] = verticalAxisValue
+
+        self.currentLoc = currentLoc
+        self.setGlyph(self.glyphName, self.currentLoc)
+
+    def _getInterpolation(self,name,loc):
+        instance = None
+        for master in self.designspace.fontMasters:
+            if loc == master['designSpacePosition']:
+                instance = master['font']
+                break
+
+        if instance is None:
+            instanceDescriptor = InstanceDescriptor()
+            instanceDescriptor.location = loc
+
+            instance = self.designspace.makeInstance(instanceDescriptor, glyphNames=[name],pairs=[], bend=True)
+        if name in instance.keys():
+            self.interpolationProblemMessage.show(False)
+            self.glyphView.show(True)
+            return instance[name]
+        else:
+            self.interpolationProblemMessage.show(True)
+            self.glyphView.show(False)
+            return instance[name]
+
+    def mainWindowClose(self):
+        removeObserver(self, "MT.prevMouseDragged")
+        removeObserver(self, "MT.prevRightMouseDown")
+        removeObserver(self, "currentGlyphChanged")
 
 class MTToolbar(Group):
     """
@@ -176,80 +425,29 @@ class MTSheet(Sheet):
 
         self.title = TextBox((0,2,-0,17),title,alignment="center",sizeStyle="small")
 
-# go to objc folder
-class MTInteractiveSBox(AppKit.NSBox):
-    count = 0
-    rightMenu = None
 
-    def worksWhenModal(self):
-        return True
-
-    def menuForEvent_(self,event):
-
-        origin = self.frameOrigin()
-        point = event.locationInWindow()
-        x,y = (point.x-origin.x,point.y-origin.y)
-        publishEvent("MT.prevRightMouseDown", cursorpos=(x,y))
-
-        if self.rightMenu is not None:
-            return self.rightMenu
-
-    def mouseDragged_(self,event):
-        # # print(event)
-        origin = self.frameOrigin()
-        w,h = (self.frameSize().width,self.frameSize().height)
-        point = event.locationInWindow()
-        rect = AppKit.NSMakeRect(origin.x,origin.y,w,h)
-        self.count += 1
-        if self.mouse_inRect_(point,rect):
-            point = event.locationInWindow()
-            x,y = (point.x-origin.x,point.y-origin.y)
-            publishEvent("MT.prevMouseDragged", cursorpos=(x,y))
-
-
-# go to objc folder
-class MTPanel(AppKit.NSPanel):
-    count = 0
-    def mouseDragged_(self,event):
-        # # print(event)
-        origin = self.frameOrigin()
-        w,h = (self.frame().size.width,self.frame().size.height)
-        point = event.locationInWindow()
-        rect = AppKit.NSMakeRect(origin.x,origin.y,w,h)
-        self.count += 1
-
-        point = event.locationInWindow()
-        x,y = (point.x-origin.x,point.y-origin.y)
-
-# go to objc folder
-class MTWindow(AppKit.NSWindow):
-    def validateMenuItem_(self, menuItem):
-        return True
 
 class MTHUDFloatingWindow(Window):
     #appearance = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameAqua)
-    Window.nsWindowClass = MTWindow
-    appearance = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameDarkAqua)
-    Window.nsWindowStyleMask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSTitledWindowMask | AppKit.NSBorderlessWindowMask
+    nsWindowClass = MTWindow
+
+    nsWindowStyleMask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSTitledWindowMask | AppKit.NSBorderlessWindowMask
+    if osVersionCurrent >= osVersion10_14:
+        appearanceDark = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameDarkAqua)
+        appearanceLight = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameAqua)
 
 
     def __init__(self, posSize, title="", minSize=None, maxSize=None, textured=False,
                 autosaveName=None, closable=True, miniaturizable=True, initiallyVisible=True,
-                fullScreenMode=None, titleVisible=True, fullSizeContentView=False, screen=None):
+                fullScreenMode=None, titleVisible=True, fullSizeContentView=False, screen=None, darkMode=False):
         super().__init__(posSize, title=title, minSize=minSize, maxSize=maxSize, textured=textured,
                     autosaveName=autosaveName, closable=closable, miniaturizable=miniaturizable, initiallyVisible=initiallyVisible,
                     fullScreenMode=fullScreenMode, titleVisible=titleVisible, fullSizeContentView=fullSizeContentView, screen=screen)
-        self._window.setAppearance_(self.appearance)
-
-
-
-
-# class MTHUDFloatingWindow(HUDFloatingWindow):
-#     nsWindowClass = MTPanel
-#     def __init__(self, posSize, title="", minSize=None, maxSize=None, textured=False, autosaveName=None, closable=True, initiallyVisible=True, screen=None):
-#         super().__init__(posSize, title, minSize, maxSize, textured, autosaveName, closable, initiallyVisible, screen)
-#         self.getNSWindow().setHidesOnDeactivate_(False) # deactivate the hiding, when the window is out of focus
-#         self.getNSWindow().setFloatingPanel_(False) # deactivate the hiding, when the window is out of focus
+        if osVersionCurrent >= osVersion10_14:
+            if darkMode:
+                self._window.setAppearance_(self.appearanceDark)
+            else:
+                self._window.setAppearance_(self.appearanceLight)
 
 
 class MTDialog(object):
@@ -262,23 +460,6 @@ class MTDialog(object):
     window = MTHUDFloatingWindow
     settingsSheet = MTSheet
     toolbar = MTToolbar
-    # def setMainWindowBehaviour(self):
-    #     addObserver(self, "rfBecameActive", "applicationDidBecomeActive")
-    #     addObserver(self, "rfWillResignActive", "applicationWillResignActive")
-    #     self.w.bind("close", self.windowWillClose)
-    #
-    # def rfBecameActive(self, notification):
-    #     self.w.getNSWindow().setBecomesKeyOnlyIfNeeded_(False)
-    #
-    # def rfWillResignActive(self, notification):
-    #     self.w.getNSWindow().setBecomesKeyOnlyIfNeeded_(True)
-    #
-    # def windowWillClose(self, notification):
-    #     removeObserver(self, "applicationDidBecomeActive")
-    #     removeObserver(self, "applicationWillResignActive")
-
-
-
 
 
 class MTlist(List):
@@ -534,7 +715,10 @@ class MTlist(List):
 
             # applying textColor
             if textColor is not None:
-                color =AppKit.NSColor.colorWithCalibratedRed_green_blue_alpha_(*textColor)
+                if isinstance(textColor,tuple):
+                    color =AppKit.NSColor.colorWithCalibratedRed_green_blue_alpha_(*textColor)
+                else:
+                    color = textColor
                 cell.setTextColor_(color)
 
             if transparentBackground:
