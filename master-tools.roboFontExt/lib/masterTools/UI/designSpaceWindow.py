@@ -1,26 +1,23 @@
-#import importlib
 from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
 from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
 from masterTools.misc.masterSwitcher import switchMasterTo, resizeOpenedFont
 from masterTools.misc import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
-from masterTools.UI.vanillaSubClasses import MTlist, MTDialog, MTInteractiveSBox, MTGlyphPreview
+from masterTools.UI.vanillaSubClasses import MTlist, MTDialog, MTGlyphPreview
 from masterTools.UI.settings import Settings
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from defconAppKit.windows.baseWindow import BaseWindowController
 from masterTools import copy2clip, getDev
-from mojo.UI import AccordionView
 from mojo.extensions import ExtensionBundle
-import os, AppKit,      sys
-from mojo.events import addObserver, removeObserver, publishEvent
-from mojo.roboFont import AllFonts, CurrentFont, OpenFont, OpenWindow
-from mojo.events import addObserver
+import AppKit
+from mojo.events import addObserver, removeObserver
+from mojo.roboFont import AllFonts, CurrentFont, OpenFont
 
 uiSettingsControler = Settings()
 uiSettings = uiSettingsControler.getDict()
 
-
 if getDev():
+    import sys, os
     currpath = os.path.join( os.path.dirname( __file__ ), '../..' )
     sys.path.append(currpath)
     sys.path = list(set(sys.path))
@@ -29,25 +26,26 @@ if getDev():
     bundle = ExtensionBundle(path=pathForBundle, resourcesName=resourcePathForBundle)
 else:
     bundle = ExtensionBundle("master-tools")
-table_icon = bundle.getResourceImage("table-icon", ext='pdf')
-drop_icon = bundle.getResourceImage("drop-icon", ext='pdf')
-drop_hover_icon = bundle.getResourceImage("drop-hover-icon", ext='pdf')
-kink_icon = bundle.getResourceImage("kink-icon", ext='pdf')
-glyphs_icon = bundle.getResourceImage("glyphs-icon", ext='pdf')
-problem_icon = bundle.getResourceImage("problem-icon", ext='pdf')
-settings_icon = bundle.getResourceImage("settings-icon", ext='pdf')
-closeIcon = bundle.getResourceImage("close-icon", ext='pdf')
+table_icon       = bundle.getResourceImage("table-icon", ext='pdf')
+drop_icon        = bundle.getResourceImage("drop-icon", ext='pdf')
+drop_hover_icon  = bundle.getResourceImage("drop-hover-icon", ext='pdf')
+kink_icon        = bundle.getResourceImage("kink-icon", ext='pdf')
+glyphs_icon      = bundle.getResourceImage("glyphs-icon", ext='pdf')
+problem_icon     = bundle.getResourceImage("problem-icon", ext='pdf')
+settings_icon    = bundle.getResourceImage("settings-icon", ext='pdf')
+closeIcon        = bundle.getResourceImage("close-icon", ext='pdf')
 closed_font_icon = bundle.getResourceImage("closed-font-icon", ext='pdf')
 opened_font_icon = bundle.getResourceImage("opened-font-icon", ext='pdf')
-setTemplateImages(table_icon, drop_icon, drop_hover_icon, kink_icon, glyphs_icon, problem_icon, settings_icon, closeIcon, closed_font_icon, opened_font_icon)
-
-
+setTemplateImages(
+                    table_icon, drop_icon, drop_hover_icon, kink_icon,
+                    glyphs_icon, problem_icon, settings_icon, closeIcon,
+                    closed_font_icon, opened_font_icon
+                )
 
 class DesignSpaceWindow(MTDialog, BaseWindowController):
     rowHeight = MTDialog.txtH + MTDialog.padding[0] * 2
-    # winMinSize = (230,519)
     winMinSize = (160,519)
-    winMaxSize = (1180,4000)
+    winMaxSize = (6000,5000)
     glyphExampleName = uiSettings["previewGlyphName"]
     fontListColumnDescriptions = [
         dict(title="openedImage",cell=ImageListCell(), width=50),
@@ -109,7 +107,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             dict(label="prev",
                 view=self.glyphPane,
                 identifier="glyphPane",
-                minSize=self.glyphPaneMinHeight,
+                minSize=self.glyphPaneMinHeight+160,
                 canCollapse=False,
                 resizeFlexibility=False,
                 ),
@@ -154,6 +152,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         addObserver(self, "currentFontChangeCB", "fontBecameCurrent")
         addObserver(self, "reloadFontListCB", "fontDidOpen")
         addObserver(self, "reloadFontListCB", "fontDidClose")
+        addObserver(self, "fontWillCloseCB", "fontWillClose")
 
     def initGlyphGroup(self):
         x,y,p = self.padding
@@ -258,44 +257,39 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
     # Callbacks
     # ---------------------
-    def currentGlyphChangedCB(self, info):
-        print(info)
+    def _getOpenedFont(self, rowIndex):
+        item = self.designspace.fontMasters[rowIndex]
+        font = item.get("openedFont")
+        return font
+
+    def _setOpenedFont(self, rowIndex):
+        item = self.designspace.fontMasters[rowIndex]
+        assert item.get("openedFont") is None, "font was already opened"
+        item["openedFont"] = OpenFont(item["path"])
+
+    def _delOpenedFont(self, rowIndex):
+        item = self.designspace.fontMasters[rowIndex]
+        assert item.get("openedFont") is not None, "font is NoneType, cannot delete"
+        del item["openedFont"]
+
 
     def doubleClickFontListCB(self, sender):
-        item = self.designspace.fontMasters[sender.getSelection()[0]]
-        selectedDefconFont = item.get("font")
-        selectedRoboFontFont = item.get("robofont.font")
+        rowIndex = sender.getSelection()[0]
+        item = self.designspace.fontMasters[rowIndex]
+        openedFont = self._getOpenedFont(rowIndex)
+        if openedFont is not None:
+            openedFont.close()
+            self._delOpenedFont(rowIndex)
 
-        # don't know why, but sometimes ["robofont.font"] changes into the NSNull
-        # here I'm checking if it is NSNull or NoneType or RFont
-        if hasattr(selectedRoboFontFont,"isNull"):
-            if selectedRoboFontFont.isNull() == 1:
-                item["robofont.font"] = None
-                selectedRoboFontFont = None
-
-        if selectedRoboFontFont is None:
-            if self.currentFont is not None:
-                item["robofont.font"] = resizeOpenedFont(self.currentFont, selectedDefconFont.path)
-            else:
-                item["robofont.font"] = OpenFont(selectedDefconFont.path)
         else:
-            selectedRoboFontFont.close()
-            item["robofont.font"] = None
+            self._setOpenedFont(rowIndex)
 
     def selectionFontListCB(self, sender):
-        if sender.getSelection():
-            item = self.designspace.fontMasters[sender.getSelection()[0]]
-            selectedRoboFontFont = item.get("robofont.font")
-
-            # don't know why, but sometimes ["robofont.font"] changes into the NSNull
-            # here I'm checking if it is NSNull or NoneType or RFont
-            if hasattr(selectedRoboFontFont,"isNull"):
-                if selectedRoboFontFont.isNull() == 1:
-                    item["robofont.font"] = None
-                    selectedRoboFontFont = None
-
-            if selectedRoboFontFont is not None: #and not isinstance(selectedRoboFontFont, AppKit.NSNull):
-                switchMasterTo(selectedRoboFontFont)
+        rowIndex = sender.getSelection()[0]
+        item = self.designspace.fontMasters[rowIndex]
+        openedFont = self._getOpenedFont(rowIndex)
+        if openedFont is not None:
+            switchMasterTo(openedFont)
 
     def currentFontChangeCB(self, sender):
         windowTypes = [w.windowName() for w in AppKit.NSApp().orderedWindows() if w.isVisible() if hasattr(w, "windowName")]
@@ -309,20 +303,14 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             setSelection = False
 
         for i,item in enumerate(self.designspace.fontMasters):
-            robofont = item.get("robofont.font")
-            # don't know why, but sometimes ["robofont.font"] changes into the NSNull
-            # here I'm checking if it is NSNull or NoneType or RFont
-            if hasattr(robofont,"isNull"):
-                if robofont.isNull() == 1:
-                    item["robofont.font"] = None
-                    robofont = None
+            openedFont = self._getOpenedFont(i)
 
-            if robofont is not None:
+            if openedFont is not None:
                 if sender is not None:
-                    if robofont == CurrentFont():
+                    if openedFont == CurrentFont():
 
-                        # if setSelection:
-                        self.fontPane.list.setSelection([i])
+                        if setSelection:
+                            self.fontPane.list.setSelection([i])
                         self.currentFont = CurrentFont()
 
                         break
@@ -353,7 +341,12 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def compatibilityTableToolitemCB(self, sender):
         # checkbox functionality of btn in Tools Group
-        print("test - compatibilityTableToolitemCB")
+        if hasattr(self, "designspace"):
+            if self.designspace is not None:
+                print(self.designspace.fontMasters)
+        pass
+
+    def fontWillCloseCB(self, info):
         pass
 
     def reloadFontListCB(self, info):
@@ -364,13 +357,13 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     def closeDesignSpaceMainWindow(self, sender):
         removeObserver(self, "fontDidOpen")
         removeObserver(self, "fontDidClose")
+        removeObserver(self, "fontWillClose")
         removeObserver(self, "fontBecameCurrent")
         self.glyphPane.prev.mainWindowClose()
 
     def resizeDesignSpaceMainWindow(self, sender):
         x,y,p = self.padding
         wx,wy,ww,wh = sender.getPosSize()
-        print(ww)
         fontlistBreakingPoint = 260
         fontlistBreakingPoint2 = 440
         fontTable = self.fontNameColumn.tableView()
@@ -381,8 +374,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         if self.fontNameColumn is not None:
             self.positionNameColumn.setMaxWidth_(300)
             self.positionNameColumn.setMinWidth_(50)
-            # self.fontNameColumn.setMaxWidth_(750)
-            # self.fontNameColumn.setMinWidth_(100)
             if ww <= fontlistBreakingPoint2:
                 self.positionNameColumn.setHidden_(True)
             else:
@@ -464,7 +455,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 # maybe shitty way, but works…
                 glyphColor = AppKit.NSColor.whiteColor()
             item["glyphExample"] = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
-            # item["glyphExample"] = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,.01,AppKit.NSColor.secondaryLabelColor())
             if item["font"].path in [font.path for font in AllFonts()]:
                 item["openedImage"] = opened_font_icon
                 item["opened"] = True
@@ -478,32 +468,20 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 item["openedImage"] = closed_font_icon
                 item["opened"] = False
 
-
     def loadDesignSpace(self, path):
-        # try:
         self.designspace = MasterToolsProcessor()
-        # self.designspace.useVarlib = True
         self.designspace.read(path)
         self.designspace.loadFonts()
         self.loadInfo()
 
         self.glyphPane.prev.setDesignSpace(self.designspace)
         self.glyphPane.prev.setGlyph("a")
-        print("designspace imported")
         return True
-        # except:
-        #     print("designspace wasn't imported")
-        #     return False
-
-
-
-
-
-
 
 def test():
     import os
-    #path = '/Users/rafalbuchner/Documents/repos/scripts/RoboFont3.0/+GOOGLE/master-tools/test_designSpace/mutatorSans-master/MutatorSans.designspace'
+    from mojo.roboFont import OpenWindow
+
     o = OpenWindow(DesignSpaceWindow)#, path)
 
 if __name__ == '__main__':

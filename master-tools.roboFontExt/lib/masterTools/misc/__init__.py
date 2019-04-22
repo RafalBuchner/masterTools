@@ -68,6 +68,7 @@ class MasterToolsProcessor(DesignSpaceProcessor):
                 include=True,
                 fontname=fontname,
                 font=info[0],
+                path=info[0].path,
                 designSpacePosition=info[1],
                 positionString=" ".join([str(position)+": "+str(info[1][position]) for position in info[1]])
                 )]

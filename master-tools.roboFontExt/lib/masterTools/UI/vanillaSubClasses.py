@@ -72,8 +72,9 @@ class MTGlyphPreview(Box):
         return txtBox
 
     def currentGlyphChangedCallback(self,sender):
-        self.glyphName = CurrentGlyph().name
-        self.interpolationProblemMessage.setTitle(f'glyph "{self.glyphName}" <Possible Interpolation Error>')
+        if CurrentGlyph() is not None:
+            self.glyphName = CurrentGlyph().name
+            self.interpolationProblemMessage.setTitle(f'glyph "{self.glyphName}" <Possible Interpolation Error>')
 
         self.setGlyph(self.glyphName, self.currentLoc)
 
