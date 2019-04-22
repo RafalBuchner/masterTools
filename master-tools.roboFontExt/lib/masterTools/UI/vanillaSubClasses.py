@@ -2,18 +2,19 @@
 from vanilla import HUDFloatingWindow, FloatingWindow, TextBox, Sheet, Window, Group, GradientButton
 
 #rom AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSSize, NSArrayController, NSTableViewLastColumnOnlyAutoresizingStyle, NSLeftTextAlignment, NSRightTextAlignment, NSCenterTextAlignment, NSJustifiedTextAlignment, NSNaturalTextAlignment
-import AppKit
+import AppKit, importlib
+import masterTools
 from masterTools.UI.objcBase import *
 from mojo.events import addObserver, removeObserver, publishEvent
 from vanilla.vanillaList import *
-from vanilla.vanillaBase import _breakCycles, _calcFrame, VanillaCallbackWrapper, VanillaError, osVersionCurrent, osVersion10_14, osVersion10_7
+from vanilla.vanillaBase import _breakCycles, _calcFrame, VanillaCallbackWrapper, VanillaError, osVersionCurrent, osVersion10_14, osVersion10_7, osVersion10_10
 from vanilla.py23 import python_method
 from mojo.glyphPreview import GlyphPreview
 from mojo.roboFont import OpenWindow, RGlyph, CurrentGlyph
 from fontTools.designspaceLib import InstanceDescriptor
 from mojo.UI import MenuBuilder
-from vanilla import Slider
-
+from vanilla import Slider, Box
+from copy import deepcopy
 _textAlignmentMap = {
     "left":AppKit.NSLeftTextAlignment,
     "right":AppKit.NSRightTextAlignment,
@@ -32,6 +33,7 @@ class MTGlyphPreview(Box):
     check = "•"
     roundLocations = True
     def __init__(self, posSize, title=None):
+        print("MTGlyphPreview-17.04.19 A")
         super(MTGlyphPreview, self).__init__(posSize, title=title)
         self.glyphName = None
         self.rightClickGroup = []
@@ -45,7 +47,7 @@ class MTGlyphPreview(Box):
         self.verAxisInfo = self.textBox((10,-12,0,12),f'vertical axis',alignment="left",textColor=AppKit.NSColor.systemGreenColor(),fontSize=("Monaco",10))
         self.interpolationProblemMessage = self.textBox((0,0,0,0),f'<Possible Interpolation Error>',alignment="center",textColor=(1,0,0,1),fontSize=("Monaco",10))
         self.interpolationProblemMessage.show(False)
-        addObserver(self, "locChangedCallback","MT.prevMouseDragged")
+        addObserver(self, "mouseDragged","MT.prevMouseDragged")
         addObserver(self, "rightMouseDownCallback","MT.prevRightMouseDown")
         addObserver(self, "currentGlyphChangedCallback", "currentGlyphChanged")
 
@@ -119,8 +121,11 @@ class MTGlyphPreview(Box):
             self.updateInfo()
 
 
-    def sCB(self, sender):
-        print(">HURRA<")
+    def sliderCallback(self, sender):
+        self.currentLoc[sender.axisName] = round(sender.get())
+
+        self.setGlyph(self.glyphName,self.currentLoc)
+        self.updateInfo()
 
     def _setContextualMenu(self):
         y,x,p = (10,10,10)
@@ -144,22 +149,14 @@ class MTGlyphPreview(Box):
             NSTable.tableColumns()[0].headerCell().setTitle_("")
         sliderItems = []
 
-        items =  []
+        self.sliderItems =  []
         for i,item in enumerate(self.axesList_ver):
             axis_name = item["vertical axis"]
-            sliderMenuItem = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(axis_name, '', '')
-
             minValue = self.axesInfo[axis_name]["minimum"]
             maxValue = self.axesInfo[axis_name]["maximum"]
             value = self.currentLoc[axis_name]
-            group2 = Group((0,0,220+3*p,50))
-            group2.title = TextBox((10,0,-0,20),axis_name)
-            group2.slider = Slider((10, 20, 220+p, 30), callback=self.sCB,minValue=minValue,maxValue=maxValue,value=value)
-            group2.slider.axis = axis_name
-            view = group2.getNSView()
-            view.setFrame_(((0, 100), (220+3*p, 50)))
-            sliderMenuItem.setView_(view)
-            items.append(sliderMenuItem)
+            sliderItem = MTSliderAxisMenuItem(axis_name, value, minValue, maxValue, self.sliderCallback)
+            self.sliderItems.append(sliderItem)
 
         # Building NSMenu
         view = group.getNSView()
@@ -167,14 +164,12 @@ class MTGlyphPreview(Box):
 
         builder = MenuBuilder([
              axisPopUpMenuItem,
-         ]+[item for item in items])
+         ]+[item for item in self.sliderItems])
 
         self.menu = builder.getMenu()
         self.menu.setMinimumWidth_(120)
         self.menu.setAutoenablesItems_(False)
         view.setFrame_(((0, 0), (220+3*p, 2*p+23+23*len(self.axesList_hor))))
-        # # viewsliders.setFrame_(((0, 0), (220+3*p, sliderGroupHeight)))
-        sliderMenuItem.setTarget_(self.getNSBox())
         self.getNSBox().rightMenu = self.menu
 
 
@@ -192,7 +187,7 @@ class MTGlyphPreview(Box):
             self.axesInfo[axisInfo['name']] = info
         if designspace.findDefault() is not None:
             self.currentLoc = designspace.findDefault().location
-            self.lastAllLocations = designspace.findDefault().location
+            self.lastAllLocations = deepcopy(designspace.findDefault().location)
         else:
             self.currentLoc = {}
             self.lastAllLocations = {name:0 for name in self.axesInfo.keys()}
@@ -212,11 +207,17 @@ class MTGlyphPreview(Box):
             return
         for axisname in loc:
             self.lastAllLocations[axisname] = loc[axisname]
-
         self.updateInfo()
         self.glyphView.setGlyph(self._getInterpolation(name,self.lastAllLocations))
 
-    def locChangedCallback(self, data):
+    def _updateSliders(self):
+        for item in self.sliderItems:
+            slider = item.getSlider()
+            value = self.lastAllLocations[slider.axisName]
+            slider.set(value)
+
+    def mouseDragged(self, data):
+
         x,y = data["cursorpos"]
         w,h = (self.getNSBox().frameSize().width,self.getNSBox().frameSize().height)
         horizontalAxisName = self.windowAxes["horizontal axis"]
@@ -242,6 +243,8 @@ class MTGlyphPreview(Box):
 
         self.currentLoc = currentLoc
         self.setGlyph(self.glyphName, self.currentLoc)
+        self._updateSliders()
+
 
     def _getInterpolation(self,name,loc):
         instance = None
@@ -249,7 +252,6 @@ class MTGlyphPreview(Box):
             if loc == master['designSpacePosition']:
                 instance = master['font']
                 break
-
         if instance is None:
             instanceDescriptor = InstanceDescriptor()
             instanceDescriptor.location = loc
@@ -355,75 +357,75 @@ class MTToolbar(Group):
 
 
 class MTSheet(Sheet):
-    nsWindowClass = AppKit.NSPanel
-    def __init__(self, posSize, parentWindow, title="", minSize=None, maxSize=None, textured=False,
-                autosaveName=None, closable=True, miniaturizable=True, initiallyVisible=True,
-                fullScreenMode=None, titleVisible=True, fullSizeContentView=False, screen=None):
-        if isinstance(parentWindow, Window):
-            parentWindow = parentWindow._window
-        self.parentWindow = parentWindow
-        textured = bool(parentWindow.styleMask() & AppKit.NSTexturedBackgroundWindowMask)
-
-        mask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSBorderlessWindowMask
-        if closable:
-            mask = mask | AppKit.NSClosableWindowMask
-        if miniaturizable:
-            mask = mask | AppKit.NSMiniaturizableWindowMask
-        if minSize or maxSize:
-            mask = mask | AppKit.NSResizableWindowMask
-        if textured:
-            mask = mask | AppKit.NSTexturedBackgroundWindowMask
-        if fullSizeContentView and osVersionCurrent >= osVersion10_10:
-            mask = mask | AppKit.NSFullSizeContentViewWindowMask
-        # start the window
-        ## too magical?
-        if len(posSize) == 2:
-            l = t = 100
-            w, h = posSize
-            cascade = True
-        else:
-            l, t, w, h = posSize
-            cascade = False
-        if screen is None:
-            screen = AppKit.NSScreen.mainScreen()
-        frame = _calcFrame(screen.visibleFrame(), ((l, t), (w, h)))
-        self._window = self.nsWindowClass.alloc().initWithContentRect_styleMask_backing_defer_screen_(
-            frame, mask, AppKit.NSBackingStoreBuffered, False, screen)
-        if autosaveName is not None:
-            # This also sets the window frame if it was previously stored.
-            # Make sure we do this before cascading.
-            self._window.setFrameAutosaveName_(autosaveName)
-        if cascade:
-            self._cascade()
-        if minSize is not None:
-            self._window.setMinSize_(minSize)
-        if maxSize is not None:
-            self._window.setMaxSize_(maxSize)
-        self._window.setTitle_(title)
-        self._window.setLevel_(self.nsWindowLevel)
-        self._window.setReleasedWhenClosed_(False)
-        self._window.setDelegate_(self)
-        self._bindings = {}
-        self._initiallyVisible = initiallyVisible
-        # full screen mode
-        if osVersionCurrent >= osVersion10_7:
-            if fullScreenMode is None:
-                pass
-            elif fullScreenMode == "primary":
-                self._window.setCollectionBehavior_(AppKit.NSWindowCollectionBehaviorFullScreenPrimary)
-            elif fullScreenMode == "auxiliary":
-                self._window.setCollectionBehavior_(AppKit.NSWindowCollectionBehaviorFullScreenAuxiliary)
-        # titlebar visibility
-        if osVersionCurrent >= osVersion10_10:
-            if not titleVisible:
-                self._window.setTitleVisibility_(AppKit.NSWindowTitleHidden)
-            else:
-                self._window.setTitleVisibility_(AppKit.NSWindowTitleVisible)
-        # full size content view
-        self._window.setTitleVisibility_(False)
-        self._window.setTitlebarAppearsTransparent_(True)
-
-        self.title = TextBox((0,2,-0,17),title,alignment="center",sizeStyle="small")
+    pass
+    # def __init__(self, posSize, parentWindow, title="", minSize=None, maxSize=None, textured=False,
+    #             autosaveName=None, closable=True, miniaturizable=True, initiallyVisible=True,
+    #             fullScreenMode=None, titleVisible=True, fullSizeContentView=False, screen=None):
+    #     if isinstance(parentWindow, Window):
+    #         parentWindow = parentWindow._window
+    #     self.parentWindow = parentWindow
+    #     textured = bool(parentWindow.styleMask() & AppKit.NSTexturedBackgroundWindowMask)
+    #
+    #     mask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSBorderlessWindowMask
+    #     if closable:
+    #         mask = mask | AppKit.NSClosableWindowMask
+    #     if miniaturizable:
+    #         mask = mask | AppKit.NSMiniaturizableWindowMask
+    #     if minSize or maxSize:
+    #         mask = mask | AppKit.NSResizableWindowMask
+    #     if textured:
+    #         mask = mask | AppKit.NSTexturedBackgroundWindowMask
+    #     if fullSizeContentView and osVersionCurrent >= osVersion10_10:
+    #         mask = mask | AppKit.NSFullSizeContentViewWindowMask
+    #     # start the window
+    #     ## too magical?
+    #     if len(posSize) == 2:
+    #         l = t = 100
+    #         w, h = posSize
+    #         cascade = True
+    #     else:
+    #         l, t, w, h = posSize
+    #         cascade = False
+    #     if screen is None:
+    #         screen = AppKit.NSScreen.mainScreen()
+    #     frame = _calcFrame(screen.visibleFrame(), ((l, t), (w, h)))
+    #     self._window = self.nsWindowClass.alloc().initWithContentRect_styleMask_backing_defer_screen_(
+    #         frame, mask, AppKit.NSBackingStoreBuffered, False, screen)
+    #     if autosaveName is not None:
+    #         # This also sets the window frame if it was previously stored.
+    #         # Make sure we do this before cascading.
+    #         self._window.setFrameAutosaveName_(autosaveName)
+    #     if cascade:
+    #         self._cascade()
+    #     if minSize is not None:
+    #         self._window.setMinSize_(minSize)
+    #     if maxSize is not None:
+    #         self._window.setMaxSize_(maxSize)
+    #     self._window.setTitle_(title)
+    #     self._window.setLevel_(self.nsWindowLevel)
+    #     self._window.setReleasedWhenClosed_(False)
+    #     self._window.setDelegate_(self)
+    #     self._bindings = {}
+    #     self._initiallyVisible = initiallyVisible
+    #     # full screen mode
+    #     if osVersionCurrent >= osVersion10_7:
+    #         if fullScreenMode is None:
+    #             pass
+    #         elif fullScreenMode == "primary":
+    #             self._window.setCollectionBehavior_(AppKit.NSWindowCollectionBehaviorFullScreenPrimary)
+    #         elif fullScreenMode == "auxiliary":
+    #             self._window.setCollectionBehavior_(AppKit.NSWindowCollectionBehaviorFullScreenAuxiliary)
+    #     # titlebar visibility
+    #     if osVersionCurrent >= osVersion10_10:
+    #         if not titleVisible:
+    #             self._window.setTitleVisibility_(AppKit.NSWindowTitleHidden)
+    #         else:
+    #             self._window.setTitleVisibility_(AppKit.NSWindowTitleVisible)
+    #     # full size content view
+    #     self._window.setTitleVisibility_(False)
+    #     self._window.setTitlebarAppearsTransparent_(True)
+    #
+    #     self.title = TextBox((0,2,-0,17),title,alignment="center",sizeStyle="small")
 
 
 

@@ -2,11 +2,19 @@ from AppKit import NSColor, NSGraphicsContext, NSForegroundColorAttributeName, N
     NSFontAttributeName, NSAffineTransform, NSRectFill, NSRectFillListUsingOperation, NSImage, NSParagraphStyleAttributeName, \
     NSBezierPath, NSMutableParagraphStyle, NSCenterTextAlignment, NSLineBreakByTruncatingMiddle, NSCompositeSourceOver
 from defconAppKit.tools.drawing import colorToNSColor
+from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
+from masterTools.UI.settings import Settings
+uiSettings = Settings().getDict()
 
 GlyphCellHeaderHeight = 14
 GlyphCellMinHeightForHeader = 40
+# def reloadGlyphColor():
+#     glyphColor = NSColor.secondaryLabelColor()
+#     print(uiSettings["darkMode"],osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"])
+#     if osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"]:
+#         # maybe shitty way, but works…
+#         glyphColor = NSColor.whiteColor()
 
-glyphColor = NSColor.secondaryLabelColor()
 cellBackgroundColor = NSColor.clearColor()
 cellHeaderBaseColor = NSColor.colorWithCalibratedWhite_alpha_(0.968, 1.0)
 cellHeaderHighlightColor = NSColor.colorWithCalibratedWhite_alpha_(0.98, 1.0)
@@ -15,8 +23,8 @@ cellMetricsLineColor = NSColor.colorWithCalibratedWhite_alpha_(0, .08)
 cellMetricsFillColor = NSColor.colorWithCalibratedWhite_alpha_(0, .08)
 
 
-def GlyphCellFactory(glyph, width, height, bufferPercent=.2, drawHeader=False, drawMetrics=False):
-    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height,bufferPercent=bufferPercent, drawHeader=drawHeader, drawMetrics=drawMetrics)
+def GlyphCellFactory(glyph, width, height, glyphColor, bufferPercent=.2, drawHeader=False, drawMetrics=False):
+    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height,glyphColor=glyphColor,bufferPercent=bufferPercent, drawHeader=drawHeader, drawMetrics=drawMetrics)
     return obj.getImage()
 
 
@@ -42,9 +50,14 @@ class GlyphCellFactoryDrawingController(object):
     Subclasses may override the layer drawing methods to customize
     the appearance of cells.
     """
+    # glyphColor = NSColor.secondaryLabelColor()
+    # if osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"]:
+    #     # maybe shitty way, but works…
+    #     glyphColor = NSColor.whiteColor()
 
-    def __init__(self, glyph, font, width, height, bufferPercent, drawHeader=False, drawMetrics=False):
+    def __init__(self, glyph, font, width, height, bufferPercent, glyphColor, drawHeader=False, drawMetrics=False):
         self.glyph = glyph
+        self.glyphColor = glyphColor
         self.font = font
         self.width = width
         self.height = height
@@ -143,7 +156,7 @@ class GlyphCellFactoryDrawingController(object):
         NSRectFillListUsingOperation(rects, len(rects), NSCompositeSourceOver)
 
     def drawCellGlyph(self):
-        glyphColor.set()
+        self.glyphColor.set()
         path = self.glyph.getRepresentation("defconAppKit.NSBezierPath")
         path.fill()
 

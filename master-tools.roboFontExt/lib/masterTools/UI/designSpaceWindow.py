@@ -1,15 +1,14 @@
 #import importlib
 from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
+from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
 from masterTools.misc.masterSwitcher import switchMasterTo, resizeOpenedFont
 from masterTools.misc import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
 from masterTools.UI.vanillaSubClasses import MTlist, MTDialog, MTInteractiveSBox, MTGlyphPreview
 from masterTools.UI.settings import Settings
-from masterTools.UI.glyphCellFactory import *
+from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from defconAppKit.windows.baseWindow import BaseWindowController
 from masterTools import copy2clip, getDev
-
-
 from mojo.UI import AccordionView
 from mojo.extensions import ExtensionBundle
 import os, AppKit,      sys
@@ -17,6 +16,8 @@ from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont, OpenWindow
 from mojo.events import addObserver
 
+uiSettingsControler = Settings()
+uiSettings = uiSettingsControler.getDict()
 
 
 if getDev():
@@ -40,7 +41,6 @@ closed_font_icon = bundle.getResourceImage("closed-font-icon", ext='pdf')
 opened_font_icon = bundle.getResourceImage("opened-font-icon", ext='pdf')
 setTemplateImages(table_icon, drop_icon, drop_hover_icon, kink_icon, glyphs_icon, problem_icon, settings_icon, closeIcon, closed_font_icon, opened_font_icon)
 
-uiSettings = Settings().getDict()
 
 
 class DesignSpaceWindow(MTDialog, BaseWindowController):
@@ -54,11 +54,12 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         dict(title="include",cell=CheckBoxListCell(),width=30),
         dict(title="fontname", cell=MTVerticallyCenteredTextFieldCell.alloc().init(), editable=False),
-        dict(title="glyphExample",cell=ImageListCell(), width=70),
+        dict(title="glyphExample",cell=ImageListCell(), width=60),
+        dict(title="positionString", cell=MTVerticallyCenteredTextFieldCell.alloc().init(), editable=False),
 
         ]
     designSpaceInfoKeys = [
-        "path","number of masters","full compatibility","axes"
+            "path", "number of masters", "full compatibility", "axes"
         ]
     def __init__(self, designSpacePath=None):
 
@@ -73,8 +74,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         maxSize=self.winMaxSize,
         autosaveName="com.rafalbuchner.designspacewindow",
         darkMode=uiSettings["darkMode"])
-
-
 
 
         self.initObservers()
@@ -92,6 +91,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         for column in fontPaneNSTable.tableColumns():
             if column.headerCell().title() == "fontname":
                 self.fontNameColumn = column
+            if column.headerCell().title() == "positionString":
+                self.positionNameColumn = column
             if column.headerCell().title() == "glyphExample":
                 self.glyphExampleColumn = column
 
@@ -103,7 +104,15 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 size=self.fontPaneHeight,
                 minSize=self.fontPaneMinHeight,
                 canCollapse=False,
-                resizeFlexibility=True),
+                resizeFlexibility=True
+                ),
+            dict(label="prev",
+                view=self.glyphPane,
+                identifier="glyphPane",
+                minSize=self.glyphPaneMinHeight,
+                canCollapse=False,
+                resizeFlexibility=False,
+                ),
             dict(label="design space info",
                 view=self.infoPane,
                 identifier="infoPane",
@@ -118,15 +127,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 minSize=self.toolsPaneHeight,
                 maxSize=self.toolsPaneHeight,
                 canCollapse=False,
-                resizeFlexibility=False),
-            dict(label="prev",
-                view=self.glyphPane,
-                identifier="glyphPane",
-                size=self.glyphHeight,
-                minSize=self.glyphHeight,
-                #maxSize=self.glyphHeight,
-                canCollapse=False,
-                resizeFlexibility=False),
+                resizeFlexibility=False
+                ),
         ]
         self.w.SplitView = SplitView((0, 0, -0, -0),
                 descriptions,
@@ -161,7 +163,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.glyphPane.caption = TextBox((x, y, 150,self.txtH), "preview")
         y = self.txtH + p   +p
         self.glyphPane.prev = MTGlyphPreview((x,y,-p,-p), self.designspace)
-        self.glyphHeight = 200
+        self.glyphHeight = 1200
+        self.glyphPaneMinHeight = self.txtH + p*2
 
 
     # initilazing groups
@@ -338,12 +341,14 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def settingsBtnCB(self, sender):
         def _close(sender):
+            uiSettingsControler.closeSettingsPanel()
             self.settings.close()
         x,y,p = self.padding
-        self.settings = self.settingsSheet((600, 700), self.w,title="settings")
-        y += 20
+        self.settings = self.settingsSheet((600, 700), self.w)#,title="settings")
+
         self.settings.closeSettingsBtn = GradientButton((-p-self.btnH, y, self.btnH, self.btnH),imageObject=closeIcon, bordered=False, callback=_close)
         self.settings.helpBtn = HelpButton((x, y, 21, 20))
+        uiSettingsControler.settingsPanel(self.settings,40)
         self.settings.open()
 
     def fontIsIncludedCB(self, sender):
@@ -368,18 +373,27 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     def resizeDesignSpaceMainWindow(self, sender):
         x,y,p = self.padding
         wx,wy,ww,wh = sender.getPosSize()
+        print(ww)
         fontlistBreakingPoint = 260
+        fontlistBreakingPoint2 = 440
         fontTable = self.fontNameColumn.tableView()
         infoNameColumn = self.infoPane.box.list.getNSTableView().tableColumns()[0]
 
         itemSize = self.toolsPane.toolbar.itemSize
         self.toolsPane.toolbar.setPosSize((x,y,ww-2*p,itemSize))
         if self.fontNameColumn is not None:
+            self.positionNameColumn.setMaxWidth_(300)
+            self.positionNameColumn.setMinWidth_(50)
+            # self.fontNameColumn.setMaxWidth_(750)
+            # self.fontNameColumn.setMinWidth_(100)
+            if ww <= fontlistBreakingPoint2:
+                self.positionNameColumn.setHidden_(True)
+            else:
+                self.positionNameColumn.setHidden_(False)
             if ww <= fontlistBreakingPoint:
                 self.glyphExampleColumn.setResizable_(True)
-                self.glyphExampleColumn.setMaxWidth_(200)
+                self.glyphExampleColumn.setMaxWidth_(300)
                 self.glyphExampleColumn.setMinWidth_(40)
-
                 self.fontNameColumn.setHidden_(True)
                 infoNameColumn.setHidden_(True)
                 bigRowHeight = 70
@@ -387,8 +401,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 fontTable.sizeToFit()
             else:
                 self.glyphExampleColumn.setResizable_(False)
-                self.glyphExampleColumn.setMaxWidth_(70)
-                self.glyphExampleColumn.setMinWidth_(70)
+                self.glyphExampleColumn.setMaxWidth_(60)
+                self.glyphExampleColumn.setMinWidth_(60)
                 self.fontNameColumn.setHidden_(False)
                 infoNameColumn.setHidden_(False)
                 fontTable.sizeToFit()
@@ -448,8 +462,12 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     def prepareFontItems(self, designSpaceMasters):
         items = []
         for item in designSpaceMasters:
-
-            item["glyphExample"] = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,bufferPercent=.01)
+            glyphColor = AppKit.NSColor.secondaryLabelColor()
+            if osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"]:
+                # maybe shitty way, but works…
+                glyphColor = AppKit.NSColor.whiteColor()
+            item["glyphExample"] = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+            # item["glyphExample"] = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,.01,AppKit.NSColor.secondaryLabelColor())
             if item["font"].path in [font.path for font in AllFonts()]:
                 item["openedImage"] = opened_font_icon
                 item["opened"] = True

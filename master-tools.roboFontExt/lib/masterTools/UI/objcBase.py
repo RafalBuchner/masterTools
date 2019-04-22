@@ -1,29 +1,34 @@
 # coding: utf-8
-from AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSTextFieldCell, NSSize, NSMenuItem
+from AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSTextFieldCell, NSSize, NSMenuItem, NSBox, NSPanel, NSWindow
+from vanilla import Group, TextBox, Slider
+from mojo.events import publishEvent
 
 class MTSliderAxisMenuItem(NSMenuItem):
 
     def __new__(cls, *arg, **kwargs):
-        return cls.alloc().initWithTitle_action_keyEquivalent_("doodle.lineSpace", None, "")
+        return cls.alloc().initWithTitle_action_keyEquivalent_("doodle.axisSpace", None, "")
 
-    def __init__(self, value, callback):
+    def __init__(self, axisname, value, minValue, maxValue, callback):
         self._callback = callback
         self._menuGroup = Group((0, 0, 0, 0))
 
-        self._menuGroup.text = TextBox((20, 0, 100, 18), "Line Space:", sizeStyle="small")
-        self._menuGroup.slider = Slider((20, 16, 120, 18), value=value, minValue=0, maxValue=400, sizeStyle="small", callback=self.sliderCallback_)
-
+        self._menuGroup.text = TextBox((20, 0, 100, 18), axisname, sizeStyle="small")
+        self._menuGroup.slider = Slider((20, 16, 200, 18), value=value, minValue=minValue, maxValue=maxValue, sizeStyle="small", callback=self.sliderCallback_, tickMarkCount=11, stopOnTickMarks=True)
+        self._menuGroup.slider.axisName = axisname
         self._view = self._menuGroup.getNSView()
-        self._view.setFrame_(AppKit.NSMakeRect(0, 0, 150, 35))
+        self._view.setFrame_(NSMakeRect(0, 0, 250, 35))
 
         self.setView_(self._view)
+
+    def getSlider(self):
+        return self._menuGroup.slider
 
     def sliderCallback_(self, sender):
         if self._callback:
             self._callback(sender)
 
 # go to objc folder
-class MTInteractiveSBox(AppKit.NSBox):
+class MTInteractiveSBox(NSBox):
     count = 0
     rightMenu = None
 
@@ -45,7 +50,7 @@ class MTInteractiveSBox(AppKit.NSBox):
         origin = self.frameOrigin()
         w,h = (self.frameSize().width,self.frameSize().height)
         point = event.locationInWindow()
-        rect = AppKit.NSMakeRect(origin.x,origin.y,w,h)
+        rect = NSMakeRect(origin.x,origin.y,w,h)
         self.count += 1
         if self.mouse_inRect_(point,rect):
             point = event.locationInWindow()
@@ -54,21 +59,21 @@ class MTInteractiveSBox(AppKit.NSBox):
 
 
 # go to objcBase
-class MTPanel(AppKit.NSPanel):
+class MTPanel(NSPanel):
     count = 0
     def mouseDragged_(self,event):
         # # print(event)
         origin = self.frameOrigin()
         w,h = (self.frame().size.width,self.frame().size.height)
         point = event.locationInWindow()
-        rect = AppKit.NSMakeRect(origin.x,origin.y,w,h)
+        rect = NSMakeRect(origin.x,origin.y,w,h)
         self.count += 1
 
         point = event.locationInWindow()
         x,y = (point.x-origin.x,point.y-origin.y)
 
 # go to objcBase
-class MTWindow(AppKit.NSWindow):
+class MTWindow(NSWindow):
     def validateMenuItem_(self, menuItem):
         return True
 
