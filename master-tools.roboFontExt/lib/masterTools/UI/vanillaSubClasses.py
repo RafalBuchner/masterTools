@@ -33,7 +33,7 @@ class MTGlyphPreview(Box):
     check = "•"
     roundLocations = True
     def __init__(self, posSize, title=None):
-        print("MTGlyphPreview-17.04.19 A")
+        # print("MTGlyphPreview-22.04.19 A")
         super(MTGlyphPreview, self).__init__(posSize, title=title)
         self.glyphName = None
         self.rightClickGroup = []
@@ -90,7 +90,15 @@ class MTGlyphPreview(Box):
                 second_axisList = self.rightClickGroup[1]
             rowIndex = curr_axisList.getSelection()[0]
             allitems = curr_axisList.get()
+            secondAllItems = second_axisList.get()
+            secondItem = secondAllItems[rowIndex]
             item = allitems[rowIndex]
+
+            if secondItem[second_axisList.axis] == item[curr_axisList.axis] and secondItem["set"] == self.check:
+                secondItem["set"] = ""
+                self.windowAxes[second_axisList.axis] = None
+                curr_axisList.set(secondAllItems)
+
             # popupbutton imitation:
             itemChoosenAxisName = item[curr_axisList.axis]
             if item["set"] != self.check:
@@ -99,27 +107,14 @@ class MTGlyphPreview(Box):
             else:
                 item["set"] = ""
                 self.windowAxes[curr_axisList.axis] = None
-            for other_index,other_item in enumerate(allitems):
-                if other_index == rowIndex:
-                    continue
-                other_item["set"] = ""
 
-
-            secondAllItems = second_axisList.get()
-
-            # if the same axis tag is choosen in the second list
-            # deselect it from the second list
-            for item in secondAllItems:
-                if item['set'] == self.check:
-                    self.windowAxes[second_axisList.axis] = item[second_axisList.axis]
-                if item[second_axisList.axis] == itemChoosenAxisName:
-                    item['set'] = ""
-                    self.windowAxes[second_axisList.axis]=None
+            for other_item in allitems:
+                if item != other_item:
+                    other_item["set"] = ""
             curr_axisList.set(allitems)
             second_axisList.setSelection([])
             curr_axisList.setSelection([])
             self.updateInfo()
-
 
     def sliderCallback(self, sender):
         self.currentLoc[sender.axisName] = round(sender.get())
@@ -211,15 +206,20 @@ class MTGlyphPreview(Box):
         self.glyphView.setGlyph(self._getInterpolation(name,self.lastAllLocations))
 
     def _updateSliders(self):
-        for item in self.sliderItems:
-            slider = item.getSlider()
-            value = self.lastAllLocations[slider.axisName]
-            slider.set(value)
+        if hasattr(self, "sliderItems"):
+            for item in self.sliderItems:
+                slider = item.getSlider()
+                value = self.lastAllLocations[slider.axisName]
+                slider.set(value)
 
     def mouseDragged(self, data):
 
         x,y = data["cursorpos"]
+        # x += self.getNSBox().frameOrigin().x
+        # y += self.getNSBox().frameOrigin().y
         w,h = (self.getNSBox().frameSize().width,self.getNSBox().frameSize().height)
+
+        # print(x,y,self.getNSBox().frameOrigin().x,self.getNSBox().frameOrigin().y)
         horizontalAxisName = self.windowAxes["horizontal axis"]
         verticalAxisName   = self.windowAxes["vertical axis"]
         horizontalAxisValue = None

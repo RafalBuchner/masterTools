@@ -13,16 +13,19 @@ class Settings(object):
     def __init__(self):
         self.__default = (
             dict(
-            darkMode=False
+            darkMode=False,
+            previewGlyphName="a",
 
 
             )
 
         )
-        if getExtensionDefault(key) is None:
-            self.__dict = self.__default # for now
-        else:
-            self.__dict = getExtensionDefault(key)
+        self.__dict = self.__default # for now
+        if getExtensionDefault(key) is not None:
+            for setting in self.__dict:
+                if setting in getExtensionDefault(key).keys():
+                    self.__dict[setting] = getExtensionDefault(key)[setting]
+        print(self.__dict)
 
     def getDict(self):
         return self.__dict
@@ -61,17 +64,27 @@ class Settings(object):
         #############
         ## darkModeOption
         self.darkModeOptions = ["dark mode","light mode"]
-        self.c1.darkMode_obj = PopUpButton((x, y, -p, btnH),
-                              self.darkModeOptions,
-                              callback=self.darkModeCallback)
-        self.c1.darkMode_obj.title = "darkMode"
+        self.c1.darkMode_obj = CheckBox((x, y, -p, btnH),
+                              "dark mode",
+                              callback=self.checkboxCallback)
+        self.c1.darkMode_obj.id = "darkMode"
+        # self.c1.darkMode_obj.setTitle("dm")
         self.updateSavedSettingsInThePanel(self.c1.darkMode_obj)
+
+        y += btnH + p
 
         #############
         ## column 2
         #############
         y = yc2 #resetting y value for item placements
 
+        self.c2.previewGlyphName_title = TextBox((x, y, -p, btnH),"preview glyph name")
+        y += btnH + p
+
+        self.c2.previewGlyphName_obj = EditText((x, y, -p, btnH),
+                            callback=self.editTextCallback)
+        self.c2.previewGlyphName_obj.id = "previewGlyphName"
+        self.updateSavedSettingsInThePanel(self.c2.previewGlyphName_obj)
 
         ############
         # updating
@@ -85,18 +98,32 @@ class Settings(object):
 
 
     def updateSavedSettingsInThePanel(self, obj):
-        if obj is not None:
-            title = obj.title
-            settingValue = self.__dict[title]
-            if isinstance(obj, PopUpButton):
+        title = obj.id
+        settingValue = self.__dict[title]
+        if isinstance(obj, PopUpButton):
+            if isinstance(settingValue, str):
                 obj.setTitle(settingValue)
 
+        if isinstance(obj, CheckBox):
+            if isinstance(settingValue, int) or isinstance(settingValue, bool):
+                obj.set(settingValue)
 
+        if isinstance(obj, EditText):
+            if isinstance(settingValue, str):
+                obj.set(settingValue)
 
+    def editTextCallback(self,sender):
+        value = sender.get()
+        self.__dict[sender.id] = value
 
-    def darkModeCallback(self,sender):
-        name = self.darkModeOptions[sender.get()]
+    def popUpCallback(self,sender):
+        index = sender.get()
+        value = sender.getItems()[index]
+        self.__dict[sender.id] = value
+
+    def checkboxCallback(self,sender):
+        trueFalse = sender.get()
         value = False
-        if name == "dark mode":
+        if trueFalse == 1:
             value = True
-        self.__dict["darkMode"] = value
+        self.__dict[sender.id] = value

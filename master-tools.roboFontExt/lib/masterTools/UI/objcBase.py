@@ -9,6 +9,7 @@ class MTSliderAxisMenuItem(NSMenuItem):
         return cls.alloc().initWithTitle_action_keyEquivalent_("doodle.axisSpace", None, "")
 
     def __init__(self, axisname, value, minValue, maxValue, callback):
+        self.axisname = axisname
         self._callback = callback
         self._menuGroup = Group((0, 0, 0, 0))
 
@@ -47,11 +48,13 @@ class MTInteractiveSBox(NSBox):
 
     def mouseDragged_(self,event):
         # # print(event)
-        origin = self.frameOrigin()
+        windowView = self.window().contentView()
+        origin = self.convertPoint_toView_(self.frameOrigin(), windowView)
         w,h = (self.frameSize().width,self.frameSize().height)
         point = event.locationInWindow()
         rect = NSMakeRect(origin.x,origin.y,w,h)
         self.count += 1
+
         if self.mouse_inRect_(point,rect):
             point = event.locationInWindow()
             x,y = (point.x-origin.x,point.y-origin.y)

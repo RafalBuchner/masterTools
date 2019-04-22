@@ -48,7 +48,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # winMinSize = (230,519)
     winMinSize = (160,519)
     winMaxSize = (1180,4000)
-    glyphExampleName = "A"
+    glyphExampleName = uiSettings["previewGlyphName"]
     fontListColumnDescriptions = [
         dict(title="openedImage",cell=ImageListCell(), width=50),
 
@@ -150,8 +150,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.w.getNSWindow().makeFirstResponder_(self.glyphPane.prev.getNSBox())
         self.w.getNSWindow().firstResponder().acceptsFirstMouse_(True)
 
-
-
     def initObservers(self):
         addObserver(self, "currentFontChangeCB", "fontBecameCurrent")
         addObserver(self, "reloadFontListCB", "fontDidOpen")
@@ -165,7 +163,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.glyphPane.prev = MTGlyphPreview((x,y,-p,-p), self.designspace)
         self.glyphHeight = 1200
         self.glyphPaneMinHeight = self.txtH + p*2
-
 
     # initilazing groups
     def initFontsGroup(self):
@@ -344,7 +341,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             uiSettingsControler.closeSettingsPanel()
             self.settings.close()
         x,y,p = self.padding
-        self.settings = self.settingsSheet((600, 700), self.w)#,title="settings")
+        self.settings = self.settingsSheet((420, 700), self.w)#,title="settings")
 
         self.settings.closeSettingsBtn = GradientButton((-p-self.btnH, y, self.btnH, self.btnH),imageObject=closeIcon, bordered=False, callback=_close)
         self.settings.helpBtn = HelpButton((x, y, 21, 20))
