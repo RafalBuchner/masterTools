@@ -214,25 +214,28 @@ class MTGlyphPreview(Box):
                 slider.set(value)
 
     def mouseDragged(self, data):
-
+        _x,_y,_w,_h = self.getPosSize()
         x,y = data["cursorpos"]
-        # x += self.getNSBox().frameOrigin().x
-        # y += self.getNSBox().frameOrigin().y
-        w,h = (self.getNSBox().frameSize().width,self.getNSBox().frameSize().height)
-
-        # print(x,y,self.getNSBox().frameOrigin().x,self.getNSBox().frameOrigin().y)
+        w,h = data["framesize"]
+        w,h = (w+_w, h+_h) ## hardcoded, still didn't figured out
         horizontalAxisName = self.windowAxes["horizontal axis"]
         verticalAxisName   = self.windowAxes["vertical axis"]
         horizontalAxisValue = None
         verticalAxisValue = None
         currentLoc = {}
 
+        # if x > 10 and x < w-30 and y > 10 and y < h-30:
+        #     w -= 10
+        #     h -= 10
+        #     x -= 10
+        #     y -= 10
+        print(x,y,(w,h))
+
+
         if horizontalAxisName is not None:
             axis_info = self.axesInfo[horizontalAxisName]
             horizontalAxisValue = axis_info["minimum"] + x/w * axis_info["range"]
             if self.roundLocations: horizontalAxisValue = round(horizontalAxisValue)
-
-
         if verticalAxisName is not None:
             axis_info = self.axesInfo[verticalAxisName]
             verticalAxisValue = axis_info["minimum"] + y/h * axis_info["range"]

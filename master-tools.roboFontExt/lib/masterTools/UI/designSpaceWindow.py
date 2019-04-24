@@ -274,6 +274,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
 
     def doubleClickFontListCB(self, sender):
+
         rowIndex = sender.getSelection()[0]
         item = self.designspace.fontMasters[rowIndex]
         openedFont = self._getOpenedFont(rowIndex)
@@ -341,9 +342,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def compatibilityTableToolitemCB(self, sender):
         # checkbox functionality of btn in Tools Group
-        if hasattr(self, "designspace"):
-            if self.designspace is not None:
-                print(self.designspace.fontMasters)
+        includedMasters = self.designspace.includedFonts
+        print(m1)
         pass
 
     def fontWillCloseCB(self, info):

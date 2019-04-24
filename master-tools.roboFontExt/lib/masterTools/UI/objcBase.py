@@ -58,7 +58,7 @@ class MTInteractiveSBox(NSBox):
         if self.mouse_inRect_(point,rect):
             point = event.locationInWindow()
             x,y = (point.x-origin.x,point.y-origin.y)
-            publishEvent("MT.prevMouseDragged", cursorpos=(x,y))
+            publishEvent("MT.prevMouseDragged", cursorpos=(x,y),framesize=(w,h))
 
 
 # go to objcBase

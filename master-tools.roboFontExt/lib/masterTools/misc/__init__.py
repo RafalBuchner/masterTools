@@ -22,13 +22,6 @@ class MasterToolsProcessor(DesignSpaceProcessor):
         return RFont(path, showInterface=False)
 
 
-    def getIncludedMaster(self, currfont):
-        includedFonts = [item for item in self.fontMasters if item["include"]]
-        index = [item[font].path for item in includedFonts].index(currfont.path)
-        mastersBefore = includedFonts[:index]
-        mastersAfter  = includedFonts[index+1:]
-        return mastersBefore, mastersAfter
-
     @property
     def includedFonts(self):
         self._includedFonts = [item for item in self.fontMasters if item["include"]]
