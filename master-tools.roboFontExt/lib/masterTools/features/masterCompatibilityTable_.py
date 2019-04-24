@@ -1,5 +1,5 @@
 # coding: utf-8
-
+from masterTools.misc.fontPartsMethods import calculateSelection
 from masterTools.UI.vanillaSubClasses import MTlist
 from vanilla import *
 import mojo.drawingTools as ctx
@@ -11,81 +11,21 @@ from mojo.roboFont import AllFonts
 # TODO:
     # numberSelectedOfPoints = calculateSelection(self.glyph) should be changed only when the selection changes. It cost too much memmory. (do it on mouseUp)
     # provide better comments
+    def updateFonts(self):
+    !!! # change naming from font.info.styleName to designspace.fontMasters["fontname"]
+    !!! # use only includedFonts
 """
 
-def calculateSelection(g):
-    """calculate the real number of highlighted points"""
-    # moveTo special misc
-    # apply for qcurves!!!
-    selectedPoints = 0
-    #totalNumber = 0
-    for c in g:
-        lastSelected = None
-        if c.points[-3].selected and c.points[0].selected and c.points[0].type == "curve":
-            # print("add+2 a")
-            selectedPoints += 2
-            lastSelected=c.points[-3]
 
-        iterC = iter(list(c.points))
-        next(iterC,None)
-        for i,p in enumerate(c.points):
-            #totalNumber += 1
-            prevP = c.points[i-1]
-            if i > len(c.points)-1:
-                nextP = next(iterC)
-            else:
-                nextP=c.points[0]
-            if p.selected:
-                if lastSelected is not None:
-                    if lastSelected == c.points[i-3] and p.type == "curve" and i != 0:
-                        # add selected handle points
-                        # print("add+2 b")
-                        selectedPoints += 2
 
-                else:
-                    # if the first selected point has outer handle, add 1
-                    if c.points[i-1].type == "offcurve" and p.type != "offcurve":
-                        # print("add+1 c")
-                        selectedPoints += 1
-
-                # if the last selected point has outer handle, add 1
-                if i+3 < len(c.points):
-                    if not c.points[i+3].selected and c.points[i+3].type == "curve":
-                        # print("add+1 d")
-                        selectedPoints += 1
-                if i+3 == len(c.points):
-                    if not c.points[0].selected and c.points[0].type == "curve":
-                        # print("add+1 e")
-                        selectedPoints += 1
-                if i+2 == len(c.points):
-                    if not c.points[1].selected and c.points[1].type == "curve":
-                        # print("add+1 f")
-                        selectedPoints += 1
-                if i+1 == len(c.points):
-                    if not c.points[2].selected and c.points[2].type == "curve":
-                        # print("add+1 g")
-                        selectedPoints += 1
-
-                # print("add+1 h")
-                selectedPoints += 1
-                lastSelected = p
-
-    return selectedPoints
 
 class CompatibilityTable(object):
+    id = "com.rafalbuchner.masterCompatibilityTable"
     txtH = 17
     btnH = 24
-    def __init__(self, testMode=False):
-        # for debugging only
-        self.padding = 10
-        p = self.padding
-        if testMode:
-            self.w = HUDFloatingWindow((250, 110), "debug only")
-            self.w.text = TextBox((p,p,-p,-p), "Master Compatibility is on, \nwhile this window is opened.\n\nIf you don't see the table, reopen the Glyph Edit Window")
-            self.w.bind("close", self.windowClose)
-            self.w.open()
-        # end debugging
-
+    padding = 10
+    def __init__(self, designspace):
+        self.designspace = designspace
         self.glyph = None
         self.fonts = []
         self.windows = {}
@@ -94,27 +34,29 @@ class CompatibilityTable(object):
         addObserver(self, "observerDraw", "draw")
         addObserver(self, "observerDrawPreview", "drawPreview")
         addObserver(self, "currentGlyphChangedObserver", "currentGlyphChanged")
-        addObserver(self, "updateFonts", "fontDidOpen")
-        addObserver(self, "updateFonts", "fontDidClose")
+        addObserver(self, "updateFonts", "MT.designspace.fontMastersChanged")
 
-    def windowClose(self, sender):
-        # if hasattr(self.view,"list"):
-        #     del self.view.box.list
-        # for i in self.windows:
-        #     self.windows[i][1].window().unbind("resize", self.glyphWindowResizedCallback)
+    def deleteThePanel(self):
+        for window in AllGlyphWindows():
+            for subview in window.getGlyphView().subviews():
+                if hasattr(subview, "id"):
+                    if subview.id == self.id:
+                        window.removeGlyphEditorSubview(subview)
+                        print("deleted subview")
+
+    def __del__(self):
+        self.deleteThePanel()
         removeObserver(self, "glyphWindowWillOpen")
+        removeObserver(self, "glyphWindowWillClose")
         removeObserver(self, "draw")
         removeObserver(self, "drawPreview")
         removeObserver(self, "currentGlyphChanged")
-        removeObserver(self, "fontWillClose")
-        removeObserver(self, "fontDidOpen")
+        removeObserver(self, "MT.designspace.fontMastersChanged")
 
     def glyphWindowWillClose(self, sender):
-        #sender.window().unbind("resize", self.glyphWindowResizedCallback)
         self.glyph.removeObserver(self, "Glyph.Changed")
 
     def glyphWindowResizedCallback(self, sender):
-        print(sender.getPosSize())
         x,y,w,h = sender.getPosSize()
         if sender.view.box.list.tableWidth+210+18 < w-25:
             tableWidth = sender.view.box.list.tableWidth
@@ -129,13 +71,11 @@ class CompatibilityTable(object):
         try:
             print("added glyph.change obesrver")
             self.glyph.addObserver(self, "glyphChanged", "Glyph.Changed")
-
             self.updateFonts(None)
             self.updateItems()
         except:
             self.updateFonts(None)
             pass
-        #self.window = info["window"]
         self.glyph = info["glyph"]
 
         self.windows = {}
@@ -143,8 +83,8 @@ class CompatibilityTable(object):
         x,y,p=(self.padding for i in range(3))
         for win_id, window in enumerate(AllGlyphWindows()):
 
-            # create a view with some controls
             view = CanvasGroup((18, -200, -15, -19-15), delegate=self)
+            view.id = self.id
             view.infoGroup = Group((x,y,210-p,-p))
             view.infoGroup.title = TextBox((5,0,-0,-p),"info")
             view.infoGroup.box = Box((0, self.btnH, -0, -0))
@@ -162,25 +102,29 @@ class CompatibilityTable(object):
             x,y,w,h =  view.box.getPosSize()
             view.box.setPosSize((x,y,tableWidth+10,h))
 
-
-            # add the view to the GlyphEditor
-
             window.addGlyphEditorSubview(view)
             window.window().bind("resize", self.glyphWindowResizedCallback)
             self.windows[win_id] = (view, window)
 
     def updateFonts(self, sender):
+        if sender is not None:
+            self.designspace = sender['designspace']
         x,y,p=(self.padding for i in range(3))
         self.fonts = []
         self.fontsDescriptor = [{"title": "contours"}]
-        for font in AllFonts():
-            self.fonts += [font]
-            self.fontsDescriptor += [{"title": font.info.styleName}]
+        print(self.designspace)
+        for item in self.designspace.fontMasters:
+            opened = item.get("openedFont")
+            if opened is None:
+                self.fonts += [item["font"]] # (fontname, font)
+            else:
+                self.fonts += [opened] # (fontname, font)
+            self.fontsDescriptor += [{"title": item["fontname"]}]
+
+
         if sender != None:
             for i in self.windows:
                 view = self.windows[i][0]
-                # view.box.list.show(True)
-                # view.infoGroup.show(True)
 
                 del view.box
                 del view.box
@@ -263,7 +207,6 @@ class CompatibilityTable(object):
             self.items = list(reversed(contours)) + list(reversed(components))
         else:
             self.items = []
-        print(self.items)
 
     def observerGlyphWindowWillClose(self, sender):
         if self.glyph != None:

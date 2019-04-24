@@ -1,5 +1,5 @@
 from ufoProcessor import *
-from mojo.roboFont import AllFonts, RFont
+from mojo.roboFont import AllFonts, RFont, OpenFont
 
 class MasterToolsProcessor(DesignSpaceProcessor):
     # fontClass = RFont
@@ -26,6 +26,16 @@ class MasterToolsProcessor(DesignSpaceProcessor):
     def includedFonts(self):
         self._includedFonts = [item for item in self.fontMasters if item["include"]]
         return self._includedFonts
+
+    @property
+    def openedIncludedFonts(self):
+        self._openedIncludedFonts = []
+        for item in self.includedFonts:
+            opened = item.get("openedFont")
+            if opened is None:
+                continue
+            self._openedIncludedFonts += [opened]
+        return self._openedIncludedFonts
 
     def compareFonts(self):
         pass
@@ -65,6 +75,19 @@ class MasterToolsProcessor(DesignSpaceProcessor):
                 designSpacePosition=info[1],
                 positionString=" ".join([str(position)+": "+str(info[1][position]) for position in info[1]])
                 )]
-
-
         self._fontsLoaded = True
+
+    def getOpenedFont(self, rowIndex):
+        item = self.fontMasters[rowIndex]
+        font = item.get("openedFont")
+        return font
+
+    def setOpenedFont(self, rowIndex):
+        item = self.fontMasters[rowIndex]
+        assert item.get("openedFont") is None, "font was already opened"
+        item["openedFont"] = OpenFont(item["path"])
+
+    def delOpenedFont(self, rowIndex):
+        item = self.fontMasters[rowIndex]
+        assert item.get("openedFont") is not None, "font is NoneType, cannot delete"
+        del item["openedFont"]

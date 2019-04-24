@@ -10,8 +10,10 @@ from defconAppKit.windows.baseWindow import BaseWindowController
 from masterTools import copy2clip, getDev
 from mojo.extensions import ExtensionBundle
 import AppKit
-from mojo.events import addObserver, removeObserver
+from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont
+
+from masterTools.features.masterCompatibilityTable_ import CompatibilityTable
 
 uiSettingsControler = Settings()
 uiSettings = uiSettingsControler.getDict()
@@ -73,7 +75,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         autosaveName="com.rafalbuchner.designspacewindow",
         darkMode=uiSettings["darkMode"])
 
-
         self.initObservers()
 
         # building groups
@@ -81,7 +82,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.initInfoGroup()
         self.initToolsGroup()
         self.initGlyphGroup() ###TEST
-
 
         # setting the fontNameColumn // needed for resizing main window
 
@@ -178,7 +178,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         # creating custom list
         dropSettings = dict(type=AppKit.NSFilenamesPboardType, operation=AppKit.NSDragOperationCopy, callback=self.dropFontListCallback)
 
-
         self.fontPane.list = MTlist(
                         (0,y,-0,-0),
                         [],# test
@@ -194,8 +193,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         # preparing even cooler look:
         fontPaneNSTable = self.fontPane.list.getNSTableView()
-
-
         # setting selection to None for now: (should be set to the Current Font, which should be stored as a separate attr)
         self.fontPane.list.setSelection([])
         #self.w.getNSWindow().makeFirstResponder_(fontPaneNSTable)
@@ -204,8 +201,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         self.fontPaneHeight = 200
         self.fontPaneMinHeight = self.txtH + p*2
-
-
 
     def initInfoGroup(self):
         x,y,p = self.padding
@@ -232,8 +227,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.infoPaneHeight = 200
         self.infoPaneMinHeight = self.txtH + p*2
 
-
-
     def initToolsGroup(self):
         x,y,p = self.padding
         self.toolsPane = Group((0, 0, -0, -0))
@@ -247,48 +240,32 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 dict(objname="incompatibleGlyphsBrowser", imageObject=glyphs_icon, toolTip="incompatible glyphs browser", callback=self.compatibilityTableToolitemCB),
                 dict(objname="problemSolvingTools", imageObject=problem_icon, toolTip="problem solving tools", callback=self.compatibilityTableToolitemCB),
             ]
-
         self.toolsPane.toolbar = self.toolbar((x,y), items=toolbarItems, itemSize=self.btnH*3, padding=20)
         #self.toolsPane.toolbar = self.toolbar((x,y), items=toolbarItems, itemSize=self.btnH*3, padding=0)
-
 
         self.toolsPaneHeight = self.btnH*3 + y+p
 
     # ---------------------
     # Callbacks
     # ---------------------
-    def _getOpenedFont(self, rowIndex):
-        item = self.designspace.fontMasters[rowIndex]
-        font = item.get("openedFont")
-        return font
-
-    def _setOpenedFont(self, rowIndex):
-        item = self.designspace.fontMasters[rowIndex]
-        assert item.get("openedFont") is None, "font was already opened"
-        item["openedFont"] = OpenFont(item["path"])
-
-    def _delOpenedFont(self, rowIndex):
-        item = self.designspace.fontMasters[rowIndex]
-        assert item.get("openedFont") is not None, "font is NoneType, cannot delete"
-        del item["openedFont"]
-
 
     def doubleClickFontListCB(self, sender):
 
         rowIndex = sender.getSelection()[0]
         item = self.designspace.fontMasters[rowIndex]
-        openedFont = self._getOpenedFont(rowIndex)
+        openedFont = self.designspace.getOpenedFont(rowIndex)
         if openedFont is not None:
             openedFont.close()
-            self._delOpenedFont(rowIndex)
+            self.designspace.delOpenedFont(rowIndex)
 
         else:
-            self._setOpenedFont(rowIndex)
+            self.designspace.setOpenedFont(rowIndex)
+        publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
     def selectionFontListCB(self, sender):
         rowIndex = sender.getSelection()[0]
         item = self.designspace.fontMasters[rowIndex]
-        openedFont = self._getOpenedFont(rowIndex)
+        openedFont = self.designspace.getOpenedFont(rowIndex)
         if openedFont is not None:
             switchMasterTo(openedFont)
 
@@ -304,16 +281,13 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             setSelection = False
 
         for i,item in enumerate(self.designspace.fontMasters):
-            openedFont = self._getOpenedFont(i)
-
+            openedFont = self.designspace.getOpenedFont(i)
             if openedFont is not None:
                 if sender is not None:
                     if openedFont == CurrentFont():
-
                         if setSelection:
                             self.fontPane.list.setSelection([i])
                         self.currentFont = CurrentFont()
-
                         break
                 else:
                     break
@@ -339,12 +313,17 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def fontIsIncludedCB(self, sender):
         self.designspace.fontMasters = sender.get()
+        publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
     def compatibilityTableToolitemCB(self, sender):
         # checkbox functionality of btn in Tools Group
-        includedMasters = self.designspace.includedFonts
-        print(m1)
-        pass
+
+        if sender.status:
+            self.compatibilityTable = CompatibilityTable(self.designspace)
+        else:
+            if hasattr(self, "compatibilityTable"):
+                del self.compatibilityTable
+
 
     def fontWillCloseCB(self, info):
         pass
@@ -401,7 +380,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
 
     def dropFontListCallback(self, sender, dropInfo):
-
         # some cool hovering options ;)
         isProposal = dropInfo["isProposal"]
         paths = dropInfo["data"]
@@ -415,10 +393,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
                 if not isProposal:
                     self.loadDesignSpaceFile(path)
-
         return True
-
-
 
     # ---------------------
     # Actions
@@ -476,6 +451,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         self.glyphPane.prev.setDesignSpace(self.designspace)
         self.glyphPane.prev.setGlyph("a")
+
+        publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
         return True
 
 def test():

@@ -45,8 +45,10 @@ class MTGlyphPreview(Box):
         rotate = self.horAxisInfo.getNSTextField().setFrameRotation_(90)
 
         self.verAxisInfo = self.textBox((10,-12,0,12),f'vertical axis',alignment="left",textColor=AppKit.NSColor.systemGreenColor(),fontSize=("Monaco",10))
-        self.interpolationProblemMessage = self.textBox((0,0,0,0),f'<Possible Interpolation Error>',alignment="center",textColor=(1,0,0,1),fontSize=("Monaco",10))
+        self.interpolationProblemMessageTxt = f'<Possible Interpolation Error>'
+        self.interpolationProblemMessage = self.textBox((0,0,0,0),self.interpolationProblemMessageTxt,alignment="center",textColor=(1,0,0,1),fontSize=("Monaco",10))
         self.interpolationProblemMessage.show(False)
+
         addObserver(self, "mouseDragged","MT.prevMouseDragged")
         addObserver(self, "rightMouseDownCallback","MT.prevRightMouseDown")
         addObserver(self, "currentGlyphChangedCallback", "currentGlyphChanged")
@@ -74,7 +76,7 @@ class MTGlyphPreview(Box):
     def currentGlyphChangedCallback(self,sender):
         if CurrentGlyph() is not None:
             self.glyphName = CurrentGlyph().name
-            self.interpolationProblemMessage.setTitle(f'glyph "{self.glyphName}" <Possible Interpolation Error>')
+            self.interpolationProblemMessageTxt = f'glyph "{self.glyphName}" <Possible Interpolation Error>'
 
         self.setGlyph(self.glyphName, self.currentLoc)
 
@@ -267,6 +269,7 @@ class MTGlyphPreview(Box):
             return instance[name]
         else:
             self.interpolationProblemMessage.show(True)
+            self.interpolationProblemMessage.set(self.interpolationProblemMessageTxt)
             self.glyphView.show(False)
             return instance[name]
 
