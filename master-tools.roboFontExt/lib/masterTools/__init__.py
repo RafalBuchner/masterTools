@@ -33,20 +33,11 @@ if __name__=='__main__':
 ######################################################
 ######################################################
 ######################################################
-
-
-
-
 from masterTools.UI.vanillaSubClasses import *
 from masterTools.UI.glyphCellFactory import *
 from masterTools.UI.settings import Settings
 from masterTools.misc.masterSwitcher import *
 from masterTools.features.masterCompatibilityTable import *
-
-
-
-
-
 
 def copy2clip(txt):
     from AppKit import NSPasteboard, NSStringPboardType
@@ -54,14 +45,9 @@ def copy2clip(txt):
     pb.declareTypes_owner_([NSStringPboardType],None)
     pb.setString_forType_(txt,NSStringPboardType)
 
-
-
 def getDev():
     return DEVELOP
 __all__ = [ "copy2clip", "getDev", ]
-
-
-
 ####
 
 

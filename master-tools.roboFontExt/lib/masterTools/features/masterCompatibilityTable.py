@@ -122,6 +122,7 @@ class CompatibilityTable(object):
             sender.view.box.list.setPosSize((x,y,tableWidth,h))
             x,y,w,h =  sender.view.box.getPosSize()
             sender.view.box.setPosSize((x,y,tableWidth+10,h))
+
     def observerGlyphWindowWillOpen(self, info):
 
         self.glyph = info["glyph"]

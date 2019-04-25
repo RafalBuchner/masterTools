@@ -45,8 +45,10 @@ class MTGlyphPreview(Box):
         rotate = self.horAxisInfo.getNSTextField().setFrameRotation_(90)
 
         self.verAxisInfo = self.textBox((10,-12,0,12),f'vertical axis',alignment="left",textColor=AppKit.NSColor.systemGreenColor(),fontSize=("Monaco",10))
-        self.interpolationProblemMessage = self.textBox((0,0,0,0),f'<Possible Interpolation Error>',alignment="center",textColor=(1,0,0,1),fontSize=("Monaco",10))
+        self.interpolationProblemMessageTxt = f'<Possible Interpolation Error>'
+        self.interpolationProblemMessage = self.textBox((0,0,0,0),self.interpolationProblemMessageTxt,alignment="center",textColor=(1,0,0,1),fontSize=("Monaco",10))
         self.interpolationProblemMessage.show(False)
+
         addObserver(self, "mouseDragged","MT.prevMouseDragged")
         addObserver(self, "rightMouseDownCallback","MT.prevRightMouseDown")
         addObserver(self, "currentGlyphChangedCallback", "currentGlyphChanged")
@@ -74,7 +76,7 @@ class MTGlyphPreview(Box):
     def currentGlyphChangedCallback(self,sender):
         if CurrentGlyph() is not None:
             self.glyphName = CurrentGlyph().name
-            self.interpolationProblemMessage.setTitle(f'glyph "{self.glyphName}" <Possible Interpolation Error>')
+            self.interpolationProblemMessageTxt = f'glyph "{self.glyphName}" <Possible Interpolation Error>'
 
         self.setGlyph(self.glyphName, self.currentLoc)
 
@@ -214,25 +216,28 @@ class MTGlyphPreview(Box):
                 slider.set(value)
 
     def mouseDragged(self, data):
-
+        _x,_y,_w,_h = self.getPosSize()
         x,y = data["cursorpos"]
-        # x += self.getNSBox().frameOrigin().x
-        # y += self.getNSBox().frameOrigin().y
-        w,h = (self.getNSBox().frameSize().width,self.getNSBox().frameSize().height)
-
-        # print(x,y,self.getNSBox().frameOrigin().x,self.getNSBox().frameOrigin().y)
+        w,h = data["framesize"]
+        w,h = (w+_w, h+_h) ## hardcoded, still didn't figured out
         horizontalAxisName = self.windowAxes["horizontal axis"]
         verticalAxisName   = self.windowAxes["vertical axis"]
         horizontalAxisValue = None
         verticalAxisValue = None
         currentLoc = {}
 
+        # if x > 10 and x < w-30 and y > 10 and y < h-30:
+        #     w -= 10
+        #     h -= 10
+        #     x -= 10
+        #     y -= 10
+        print(x,y,(w,h))
+
+
         if horizontalAxisName is not None:
             axis_info = self.axesInfo[horizontalAxisName]
             horizontalAxisValue = axis_info["minimum"] + x/w * axis_info["range"]
             if self.roundLocations: horizontalAxisValue = round(horizontalAxisValue)
-
-
         if verticalAxisName is not None:
             axis_info = self.axesInfo[verticalAxisName]
             verticalAxisValue = axis_info["minimum"] + y/h * axis_info["range"]
@@ -264,6 +269,7 @@ class MTGlyphPreview(Box):
             return instance[name]
         else:
             self.interpolationProblemMessage.show(True)
+            self.interpolationProblemMessage.set(self.interpolationProblemMessageTxt)
             self.glyphView.show(False)
             return instance[name]
 
