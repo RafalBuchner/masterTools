@@ -7,17 +7,6 @@ from mojo.events import addObserver, removeObserver
 from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
 from mojo.roboFont import AllFonts
-"""
-# TODO:
-    # numberSelectedOfPoints = calculateSelection(self.glyph) should be changed only when the selection changes. It cost too much memmory. (do it on mouseUp)
-    # provide better comments
-    def updateFonts(self):
-    !!! # change naming from font.info.styleName to designspace.fontMasters["fontname"]
-    !!! # use only includedFonts
-"""
-
-
-
 
 class CompatibilityTable(object):
     id = "com.rafalbuchner.masterCompatibilityTable"
@@ -29,6 +18,8 @@ class CompatibilityTable(object):
         self.glyph = None
         self.fonts = []
         self.windows = {}
+
+    def start(self):
         addObserver(self, "observerGlyphWindowWillOpen", "glyphWindowWillOpen")
         addObserver(self, "observerGlyphWindowWillClose", "glyphWindowWillClose")
         addObserver(self, "observerDraw", "draw")
@@ -36,15 +27,16 @@ class CompatibilityTable(object):
         addObserver(self, "currentGlyphChangedObserver", "currentGlyphChanged")
         addObserver(self, "updateFonts", "MT.designspace.fontMastersChanged")
 
-    def deleteThePanel(self):
+        # initilazing panel for the first time:
         for window in AllGlyphWindows():
-            for subview in window.getGlyphView().subviews():
-                if hasattr(subview, "id"):
-                    if subview.id == self.id:
-                        window.removeGlyphEditorSubview(subview)
-                        print("deleted subview")
+            info = {
+                "window": window,
+                "glyph" : window.getGlyph()
+            }
+            self.observerGlyphWindowWillOpen(info)
 
-    def __del__(self):
+    def finish(self):
+        print('del inside')
         self.deleteThePanel()
         removeObserver(self, "glyphWindowWillOpen")
         removeObserver(self, "glyphWindowWillClose")
@@ -53,17 +45,17 @@ class CompatibilityTable(object):
         removeObserver(self, "currentGlyphChanged")
         removeObserver(self, "MT.designspace.fontMastersChanged")
 
+    def deleteThePanel(self):
+        print("!!!!>>>>",len(self.windows.keys()))
+        for window in AllGlyphWindows():
+            if window in self.windows.keys():
+                view = self.windows[window]
+                window.removeGlyphEditorSubview(view)
+                print("deleted subview")
+
+
     def glyphWindowWillClose(self, sender):
         self.glyph.removeObserver(self, "Glyph.Changed")
-
-    def glyphWindowResizedCallback(self, sender):
-        x,y,w,h = sender.getPosSize()
-        if sender.view.box.list.tableWidth+210+18 < w-25:
-            tableWidth = sender.view.box.list.tableWidth
-            x,y,w,h =  sender.view.box.list.getPosSize()
-            sender.view.box.list.setPosSize((x,y,tableWidth,h))
-            x,y,w,h =  sender.view.box.getPosSize()
-            sender.view.box.setPosSize((x,y,tableWidth+10,h))
 
     def observerGlyphWindowWillOpen(self, info):
 
@@ -78,33 +70,27 @@ class CompatibilityTable(object):
             pass
         self.glyph = info["glyph"]
 
-        self.windows = {}
-
         x,y,p=(self.padding for i in range(3))
-        for win_id, window in enumerate(AllGlyphWindows()):
+        # for win_id, window in enumerate(AllGlyphWindows()):
+        window = info["window"]
+        view = CanvasGroup((18, -200, -15, -19-15), delegate=self)
+        view.id = self.id
+        view.infoGroup = Group((x,y,210-p,-p))
+        view.infoGroup.title = TextBox((5,0,-0,-p),"info")
+        view.infoGroup.box = Box((0, self.btnH, -0, -0))
+        view.infoGroup.box.infoTitles = TextBox((0,0,-0,-p), "".join([title+"\n" for title in self.info]))
+        view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n" for info in self.info]), alignment="right")
 
-            view = CanvasGroup((18, -200, -15, -19-15), delegate=self)
-            view.id = self.id
-            view.infoGroup = Group((x,y,210-p,-p))
-            view.infoGroup.title = TextBox((5,0,-0,-p),"info")
-            view.infoGroup.box = Box((0, self.btnH, -0, -0))
-            view.infoGroup.box.infoTitles = TextBox((0,0,-0,-p), "".join([title+"\n" for title in self.info]))
-            view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n" for info in self.info]), alignment="right")
+        view.box = Box((x+210, y, -p, -p))
+        view.box.list = MTlist((0, 0, -0, -0),
+                              self.items,
+                              columnDescriptions=self.fontsDescriptor,
+                              mainWindow=window,
+                              transparentBackground=True,
+                              widthIsHeader=True)
 
-            view.box = Box((x+210, y, -p, -p))
-            view.box.list = MTlist((0, 0, -0, -0),
-                                  self.items,
-                                  columnDescriptions=self.fontsDescriptor,
-                                  mainWindow=window,
-                                  transparentBackground=True,
-                                  widthIsHeader=True)
-            tableWidth = view.box.list.tableWidth
-            x,y,w,h =  view.box.getPosSize()
-            view.box.setPosSize((x,y,tableWidth+10,h))
-
-            window.addGlyphEditorSubview(view)
-            window.window().bind("resize", self.glyphWindowResizedCallback)
-            self.windows[win_id] = (view, window)
+        window.addGlyphEditorSubview(view)
+        self.windows[window] = view # I think overlapping is going on here
 
     def updateFonts(self, sender):
         if sender is not None:
@@ -113,28 +99,28 @@ class CompatibilityTable(object):
         self.fonts = []
         self.fontsDescriptor = [{"title": "contours"}]
         print(self.designspace)
-        for item in self.designspace.fontMasters:
+        for item in self.designspace.includedFonts:
             opened = item.get("openedFont")
+            fontName = item["fontname"]
             if opened is None:
-                self.fonts += [item["font"]] # (fontname, font)
+                self.fonts += [(fontName, item["font"])] # (fontname, font)
             else:
-                self.fonts += [opened] # (fontname, font)
-            self.fontsDescriptor += [{"title": item["fontname"]}]
+                self.fonts += [(fontName, opened)] # (fontname, font)
+            self.fontsDescriptor += [{"title": fontName}]
 
 
         if sender != None:
-            for i in self.windows:
-                view = self.windows[i][0]
+            for window in self.windows:
+                view = self.windows[window]
 
                 del view.box
-                del view.box
-                #del view.box
+
                 print("!!!!!!!! add list > updateFonts")
                 view.box = Box((x+210, y, -p, -p))
                 view.box.list = MTlist((0, 0, -0, -0),
                                   self.items,
                                   columnDescriptions=self.fontsDescriptor,
-                                  mainWindow=self.windows[i][1],
+                                  mainWindow=window,
                                   transparentBackground=True,
                                   widthIsHeader=True)
 
@@ -143,11 +129,13 @@ class CompatibilityTable(object):
     def updateItems(self):
         if self.glyph != None:
             gName = self.glyph.name
-            fontName = self.glyph.font.info.styleName
+            fontName = ""
+            for masterName,font in self.fonts:
+                if font == self.glyph.font:
+                    fontName = masterName
             numberOfPoints = sum([len(c.points) for c in self.glyph])
             numberSelectedOfPoints = calculateSelection(self.glyph)
             self.info = {"master": fontName,"name": gName,"contours": len(self.glyph),"points":numberOfPoints, "selected":numberSelectedOfPoints}
-            #self.items = [{font.info.styleName:"TEST"} for font in self.fonts for c in font[gName]]
 
             self.items = []
             contours = []
@@ -156,16 +144,16 @@ class CompatibilityTable(object):
             columns = {}
             maxNumOfContours = 0
             maxNumOfComponents = 0
-            for font in self.fonts:
+            for masterName, font in self.fonts:
                 glyph = font[gName]
-                columns[font.info.styleName] = []
+                columns[masterName] = []
                 countCountour = 0
                 countComponent = 0
                 for c in glyph:
-                    columns[font.info.styleName] += [len(c.points)]
+                    columns[masterName] += [len(c.points)]
                     countCountour += 1
                 for comp in glyph.components:
-                    columns[font.info.styleName] += [comp.baseGlyph]
+                    columns[masterName] += [comp.baseGlyph]
                     countComponent += 1
                 if countCountour > maxNumOfContours:
                     maxNumOfContours = countCountour
@@ -177,18 +165,18 @@ class CompatibilityTable(object):
                 row["contours"] = "C%s" % (i)
 
                 compatible = True
-                if i < len(columns[self.fonts[0].info.styleName]):
-                    model = columns[self.fonts[0].info.styleName][i]
+                if i < len(columns[fontName]):
+                    model = columns[fontName][i]
                 else:
                     compatible = False
                     continue
-                for font in self.fonts:
-                    if i < len(columns[font.info.styleName]):
-                        row[font.info.styleName] = columns[font.info.styleName][i]
-                        if row[font.info.styleName] != model:
+                for masterName, font in self.fonts:
+                    if i < len(columns[masterName]):
+                        row[masterName] = columns[masterName][i]
+                        if row[masterName] != model:
                             compatible = False
                     else:
-                        row[font.info.styleName] = ""
+                        row[masterName] = ""
                         compatible = False
                 if not compatible:
                     row["contours"] += " ERROR!!!"
@@ -199,9 +187,9 @@ class CompatibilityTable(object):
                 row["contours"] = "(%s) Component%s" % (gName, i)
                 print(type(i),i)
                 print(type(maxNumOfContours),maxNumOfContours)
-                for font in self.fonts:
-                    if maxNumOfContours+i < len(columns[font.info.styleName]):
-                        row[font.info.styleName] = columns[font.info.styleName][maxNumOfContours+i]
+                for masterName, font in self.fonts:
+                    if maxNumOfContours+i < len(columns[masterName]):
+                        row[masterName] = columns[masterName][maxNumOfContours+i]
                 components += [row]
 
             self.items = list(reversed(contours)) + list(reversed(components))
@@ -213,43 +201,39 @@ class CompatibilityTable(object):
             self.glyph.removeObserver(self, "Glyph.Changed")
 
     def currentGlyphChangedObserver(self, info):
-        # if hasattr(self,"glyph"):
         if self.glyph != None:
             self.glyph.removeObserver(self, "Glyph.Changed")
         self.glyph = info["glyph"]
-        # self.view = info["view"]
         if self.glyph != None:
             self.glyph.addObserver(self, "glyphChanged", "Glyph.Changed")
 
         self.updateItems()
 
-        for i in self.windows:
-            view = self.windows[i][0]
+        for window in self.windows:
+            view = self.windows[window]
             view.box.list.set(self.items)
             view.infoGroup.box.info.set("".join([f"{self.info[info]}\n"for info in self.info]))
 
     def glyphChanged(self, sender):
         self.updateItems()
-        for i in self.windows:
-            view = self.windows[i][0]
+        for window in self.windows:
+            view = self.windows[window]
             view.box.list.set(self.items)
             view.infoGroup.box.info.set("".join([f"{self.info[info]}\n"for info in self.info]))
 
     def observerDraw(self, notification):
-        for i in self.windows:
-            view = self.windows[i][0]
+        for window in self.windows:
+            view = self.windows[window]
             view.box.list.show(True)
             view.infoGroup.show(True)
-
 
     def observerDrawPreview(self, notification):
         # hide the view in Preview mode
-        for i in self.windows:
-            view = self.windows[i][0]
+        for window in self.windows:
+            view = self.windows[window]
             view.box.list.show(True)
             view.infoGroup.show(True)
 
-    # canvas delegate callbacks
     def opaque(self):
         return True
 

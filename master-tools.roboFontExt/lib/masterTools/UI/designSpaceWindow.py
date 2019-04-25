@@ -62,6 +62,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             "path", "number of masters", "full compatibility", "axes"
         ]
     def __init__(self, designSpacePath=None):
+        # tools inits as None:
+        self.compatibilityTableTool = None
 
         self.designspace = None
         self.fontNameColumn = None
@@ -317,12 +319,13 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def compatibilityTableToolitemCB(self, sender):
         # checkbox functionality of btn in Tools Group
-
         if sender.status:
-            self.compatibilityTable = CompatibilityTable(self.designspace)
+            if self.compatibilityTableTool is None:
+                self.compatibilityTableTool = CompatibilityTable(self.designspace)
+            self.compatibilityTableTool.start()
+
         else:
-            if hasattr(self, "compatibilityTable"):
-                del self.compatibilityTable
+            self.compatibilityTableTool.finish()
 
 
     def fontWillCloseCB(self, info):
