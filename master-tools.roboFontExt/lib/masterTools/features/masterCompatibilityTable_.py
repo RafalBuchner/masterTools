@@ -20,12 +20,12 @@ class CompatibilityTable(object):
         self.windows = {}
 
     def start(self):
-        addObserver(self, "observerGlyphWindowWillOpen", "glyphWindowWillOpen")
+        addObserver(self, "observerGlyphWindowWillOpen",  "glyphWindowWillOpen")
         addObserver(self, "observerGlyphWindowWillClose", "glyphWindowWillClose")
-        addObserver(self, "observerDraw", "draw")
-        addObserver(self, "observerDrawPreview", "drawPreview")
-        addObserver(self, "currentGlyphChangedObserver", "currentGlyphChanged")
-        addObserver(self, "updateFonts", "MT.designspace.fontMastersChanged")
+        addObserver(self, "observerDraw",                 "draw")
+        addObserver(self, "observerDrawPreview",          "drawPreview")
+        addObserver(self, "currentGlyphChangedObserver",  "currentGlyphChanged")
+        addObserver(self, "updateFonts",                  "MT.designspace.fontMastersChanged")
 
         # initilazing panel for the first time:
         for window in AllGlyphWindows():
@@ -34,11 +34,10 @@ class CompatibilityTable(object):
                 "glyph" : window.getGlyph()
             }
             self.glyph = window.getGlyph()
-            print(window.getGlyph())
+            help(window.getGlyph())
             self.observerGlyphWindowWillOpen(info)
 
     def finish(self):
-        print('del inside')
         self.deleteThePanel()
         removeObserver(self, "glyphWindowWillOpen")
         removeObserver(self, "glyphWindowWillClose")
@@ -61,14 +60,13 @@ class CompatibilityTable(object):
         if currGlyph is not None:
             self.glyph = currGlyph
 
-        # try:
-        self.glyph.addObserver(self, "glyphChanged", "Glyph.Changed")
-        self.updateFonts(None)
-        self.updateItems()
-        # except:
-        #     self.updateFonts(None)
-        #     self.updateItems()
-        #     pass
+        try:
+            self.glyph.addObserver(self, "glyphChanged", "Glyph.Changed")
+            self.updateFonts(None)
+            self.updateItems()
+        except:
+            self.updateFonts(None)
+            self.updateItems()
 
         x,y,p=(self.padding for i in range(3))
         # for win_id, window in enumerate(AllGlyphWindows()):
