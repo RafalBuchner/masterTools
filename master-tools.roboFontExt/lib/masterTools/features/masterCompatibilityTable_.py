@@ -33,6 +33,8 @@ class CompatibilityTable(object):
                 "window": window,
                 "glyph" : window.getGlyph()
             }
+            self.glyph = window.getGlyph()
+            print(window.getGlyph())
             self.observerGlyphWindowWillOpen(info)
 
     def finish(self):
@@ -46,29 +48,27 @@ class CompatibilityTable(object):
         removeObserver(self, "MT.designspace.fontMastersChanged")
 
     def deleteThePanel(self):
-        print("!!!!>>>>",len(self.windows.keys()))
         for window in AllGlyphWindows():
             if window in self.windows.keys():
                 view = self.windows[window]
                 window.removeGlyphEditorSubview(view)
-                print("deleted subview")
-
 
     def glyphWindowWillClose(self, sender):
         self.glyph.removeObserver(self, "Glyph.Changed")
 
     def observerGlyphWindowWillOpen(self, info):
+        currGlyph = info.get("glyph")
+        if currGlyph is not None:
+            self.glyph = currGlyph
 
-        self.glyph = info["glyph"]
-        try:
-            print("added glyph.change obesrver")
-            self.glyph.addObserver(self, "glyphChanged", "Glyph.Changed")
-            self.updateFonts(None)
-            self.updateItems()
-        except:
-            self.updateFonts(None)
-            pass
-        self.glyph = info["glyph"]
+        # try:
+        self.glyph.addObserver(self, "glyphChanged", "Glyph.Changed")
+        self.updateFonts(None)
+        self.updateItems()
+        # except:
+        #     self.updateFonts(None)
+        #     self.updateItems()
+        #     pass
 
         x,y,p=(self.padding for i in range(3))
         # for win_id, window in enumerate(AllGlyphWindows()):
@@ -98,7 +98,7 @@ class CompatibilityTable(object):
         x,y,p=(self.padding for i in range(3))
         self.fonts = []
         self.fontsDescriptor = [{"title": "contours"}]
-        print(self.designspace)
+
         for item in self.designspace.includedFonts:
             opened = item.get("openedFont")
             fontName = item["fontname"]
@@ -108,14 +108,10 @@ class CompatibilityTable(object):
                 self.fonts += [(fontName, opened)] # (fontname, font)
             self.fontsDescriptor += [{"title": fontName}]
 
-
         if sender != None:
             for window in self.windows:
                 view = self.windows[window]
-
                 del view.box
-
-                print("!!!!!!!! add list > updateFonts")
                 view.box = Box((x+210, y, -p, -p))
                 view.box.list = MTlist((0, 0, -0, -0),
                                   self.items,

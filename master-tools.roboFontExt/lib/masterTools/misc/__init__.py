@@ -1,19 +1,20 @@
 from ufoProcessor import *
-from mojo.roboFont import AllFonts, RFont, OpenFont
+from mojo.roboFont import *
+# from mojo.roboFont import AllFonts, RFont, OpenFont
 
 class MasterToolsProcessor(DesignSpaceProcessor):
-    # fontClass = RFont
-    # layerClass = RLayer
-    # glyphClass = RGlyph
-    # libClass = RLib
-    # glyphContourClass = RContour
-    # glyphPointClass = RPoint
-    # glyphComponentClass = RComponent
-    # glyphAnchorClass = RAnchor
-    # kerningClass = RKerning
-    # groupsClass = RGroups
-    # infoClass = RInfo
-    # featuresClass = RFeatures
+    fontClass = RFont
+    layerClass = RLayer
+    glyphClass = RGlyph
+    libClass = RLib
+    glyphContourClass = RContour
+    glyphPointClass = RPoint
+    glyphComponentClass = RComponent
+    glyphAnchorClass = RAnchor
+    kerningClass = RKerning
+    groupsClass = RGroups
+    infoClass = RInfo
+    featuresClass = RFeatures
 
     def _instantiateFont(self, path):
         for font in AllFonts():
