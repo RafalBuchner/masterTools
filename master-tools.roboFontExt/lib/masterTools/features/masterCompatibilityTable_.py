@@ -6,7 +6,7 @@ import mojo.drawingTools as ctx
 from mojo.events import addObserver, removeObserver
 from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
-from mojo.roboFont import AllFonts
+from mojo.roboFont import AllFonts, RGlyph
 
 class CompatibilityTable(object):
     id = "com.rafalbuchner.masterCompatibilityTable"
@@ -29,12 +29,11 @@ class CompatibilityTable(object):
 
         # initilazing panel for the first time:
         for window in AllGlyphWindows():
+            self.glyph = RGlyph(window.getGlyph())
             info = {
                 "window": window,
-                "glyph" : window.getGlyph()
+                "glyph" : self.glyph
             }
-            self.glyph = window.getGlyph()
-            help(window.getGlyph())
             self.observerGlyphWindowWillOpen(info)
 
     def finish(self):
