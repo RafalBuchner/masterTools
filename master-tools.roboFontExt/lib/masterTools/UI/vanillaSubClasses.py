@@ -776,31 +776,31 @@ def TMTextBox(posSize, text="", alignment="natural", selectable=False, sizeStyle
 if __name__ == "__main__":
     pass
 
-    # from vanilla import HUDFloatingWindow, Window
-    # class ListDemo(object):
-    #     def __init__(self):
-    #
-    #         font =AppKit.NSFont.systemFontOfSize_(17)
-    #         self.w = Window((200, 200))
-    #         columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12)}, {"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"}]
-    #         self.w.myList = MTlist((20, 20, -20, -40),
-    #                      [{"One": "A", "Two": "a"}, {"One": "B", "Two": "b"}],
-    #                      columnDescriptions=columnDescriptions,
-    #                      rowHeight=30, font=font,transparentBackground=True,
-    #                      selectionCallback=self.selectionCallback)
-    #         #self.w.txt = TMTextBox((20,-40,-20,20), text="Test 12344012", alignment="natural", selectable=False, sizeStyle="regular", fontAttr=("AndaleMono",17), color=(1,0,0,1))
-    #
-    #
-    #         self.w.open()
-    #     def selectionCallback(self, sender):
-    #         #help(self.w.myList.getNSTableView())
-    #         #print(self.w.myList.getNSTableView().setSelectionHighlightStyle_(1))
-    #         self.w.myList.getNSTableView().setSelectionHighlightStyle_(500)
-    #         #self.w.myList.getNSTableView().setAllowsColumnSelection_(True)
-    #         pass
-    #         # size =AppKit.NSSize(100, 200)
-    #         # help(size)
-    #         # self.w.myList.getNSTableView().setIntercellSpacing_(size)
-    #
-    # ListDemo()
+    from vanilla import HUDFloatingWindow, Window
+    class ListDemo(object):
+        def __init__(self):
+
+            font =AppKit.NSFont.systemFontOfSize_(17)
+            self.w = Window((200, 200))
+            columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12)}, {"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"}]
+            self.w.myList = MTlist((20, 20, -20, -40),
+                         [{"One": "A", "Two": "a"}, {"One": "B", "Two": "b"}],
+                         columnDescriptions=columnDescriptions,
+                         rowHeight=30, font=font,transparentBackground=True,
+                         selectionCallback=self.selectionCallback)
+            #self.w.txt = TMTextBox((20,-40,-20,20), text="Test 12344012", alignment="natural", selectable=False, sizeStyle="regular", fontAttr=("AndaleMono",17), color=(1,0,0,1))
+
+
+            self.w.open()
+        def selectionCallback(self, sender):
+            #help(self.w.myList.getNSTableView())
+            #print(self.w.myList.getNSTableView().setSelectionHighlightStyle_(1))
+            self.w.myList.getNSTableView().setSelectionHighlightStyle_(500)
+            #self.w.myList.getNSTableView().setAllowsColumnSelection_(True)
+            pass
+            # size =AppKit.NSSize(100, 200)
+            # help(size)
+            # self.w.myList.getNSTableView().setIntercellSpacing_(size)
+
+    ListDemo()
     #

@@ -173,19 +173,20 @@ class CompatibilityTable(object):
                         compatible = False
                 if not compatible:
                     row["contours"] += " ERROR!!!"
+
                 contours += [row]
 
             for i in range(maxNumOfComponents-1,-1,-1):
                 row = {}
                 row["contours"] = "(%s) Component%s" % (gName, i)
-                print(type(i),i)
-                print(type(maxNumOfContours),maxNumOfContours)
+
                 for masterName, font in self.fonts:
                     if maxNumOfContours+i < len(columns[masterName]):
                         row[masterName] = columns[masterName][maxNumOfContours+i]
                 components += [row]
 
             self.items = list(reversed(contours)) + list(reversed(components))
+
         else:
             self.items = []
 
