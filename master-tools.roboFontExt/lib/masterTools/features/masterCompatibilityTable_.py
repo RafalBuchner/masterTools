@@ -190,6 +190,24 @@ class CompatibilityTable(object):
         else:
             self.items = []
 
+        self.updateErrorHighlighting()
+
+    def updateErrorHighlighting(self):
+        for window in self.windows:
+            view = self.windows[window]
+            if hasattr(view.box, "list"):
+                table = view.box.list.getNSTableView()
+                highlightRowIds = []
+                for i, row in enumerate(self.items):
+                    if " ERR" in row["contours"]:
+                        highlightRowIds += [i]
+                cellDescription = {}
+                for rowId in highlightRowIds:
+                    for columnId in range(len(table.tableColumns())):
+                        cellDescription[(columnId,rowId)] = (1,0,0,.3)
+
+                view.box.list.setCellHighlighting(cellDescription)
+
     def observerGlyphWindowWillClose(self, sender):
         if self.glyph != None:
             self.glyph.removeObserver(self, "Glyph.Changed")
@@ -212,20 +230,23 @@ class CompatibilityTable(object):
         self.updateItems()
         for window in self.windows:
             view = self.windows[window]
-            view.box.list.set(self.items)
+            if hasattr(view.box, "list"):
+                view.box.list.set(self.items)
             view.infoGroup.box.info.set("".join([f"{self.info[info]}\n"for info in self.info]))
 
     def observerDraw(self, notification):
         for window in self.windows:
             view = self.windows[window]
-            view.box.list.show(True)
+            if hasattr(view.box, "list"):
+                view.box.list.show(True)
             view.infoGroup.show(True)
 
     def observerDrawPreview(self, notification):
         # hide the view in Preview mode
         for window in self.windows:
             view = self.windows[window]
-            view.box.list.show(True)
+            if hasattr(view.box, "list"):
+                view.box.list.show(True)
             view.infoGroup.show(True)
 
     def opaque(self):

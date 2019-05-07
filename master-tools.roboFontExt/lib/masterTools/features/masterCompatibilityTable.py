@@ -156,7 +156,8 @@ class CompatibilityTable(object):
                                   self.items,
                                   columnDescriptions=self.fontsDescriptor,
                                   mainWindow=window,
-                                  transparentBackground=True,
+                                  # transparentBackground=True,
+                                  transparentBackground=False,
                                   widthIsHeader=True)
             tableWidth = view.box.list.tableWidth
             x,y,w,h =  view.box.getPosSize()
@@ -191,7 +192,8 @@ class CompatibilityTable(object):
                                   self.items,
                                   columnDescriptions=self.fontsDescriptor,
                                   mainWindow=self.windows[i][1],
-                                  transparentBackground=True,
+                                  # transparentBackground=True,
+                                  transparentBackground=False,
                                   widthIsHeader=True)
 
                 #view.infoGroup.box.info = TextBox((x,y,120-p,-p),"".join([f"{self.info[info]}\n"for info in self.info]))
@@ -247,14 +249,13 @@ class CompatibilityTable(object):
                         row[font.info.styleName] = ""
                         compatible = False
                 if not compatible:
-                    row["contours"] += " ERROR!!!"
+                    row["contours"] += " ERR"
                 contours += [row]
 
             for i in range(maxNumOfComponents-1,-1,-1):
                 row = {}
                 row["contours"] = "(%s) Component%s" % (gName, i)
-                print(type(i),i)
-                print(type(maxNumOfContours),maxNumOfContours)
+
                 for font in self.fonts:
                     if maxNumOfContours+i < len(columns[font.info.styleName]):
                         row[font.info.styleName] = columns[font.info.styleName][maxNumOfContours+i]
@@ -263,7 +264,23 @@ class CompatibilityTable(object):
             self.items = list(reversed(contours)) + list(reversed(components))
         else:
             self.items = []
-        print(self.items)
+
+        self.updateErrorHighlighting()
+
+    def updateErrorHighlighting(self):
+        for i in self.windows:
+            view = self.windows[i][0]
+            table = view.box.list.getNSTableView()
+            highlightRowIds = []
+            for i, row in enumerate(self.items):
+                if " ERR" in row["contours"]:
+                    highlightRowIds += [i]
+            cellDescription = {}
+            for rowId in highlightRowIds:
+                for columnId in len(table.tableColumns()):
+                    cellDescription[(columnId,rowId)] = (1,0,0,.3)
+
+            self.w.myList.setCellHighlighting(cellDescription)
 
     def observerGlyphWindowWillClose(self, sender):
         if self.glyph != None:

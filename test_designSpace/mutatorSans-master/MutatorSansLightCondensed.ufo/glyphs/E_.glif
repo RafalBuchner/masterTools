@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <glyph name="E" format="2">
   <advance width="380"/>
   <unicode hex="0045"/>
@@ -24,6 +24,7 @@
     </contour>
     <contour>
       <point x="80" y="334" type="line"/>
+      <point x="201" y="334" type="line"/>
       <point x="320" y="334" type="line"/>
       <point x="320" y="370" type="line"/>
       <point x="80" y="370" type="line"/>
