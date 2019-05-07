@@ -1,7 +1,46 @@
 # coding: utf-8
-from AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSTextFieldCell, NSSize, NSMenuItem, NSBox, NSPanel, NSWindow
+from AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSTextFieldCell, NSSize, NSMenuItem, NSBox, NSPanel, NSWindow, NSObject
 from vanilla import Group, TextBox, Slider
+from vanilla.vanillaList import VanillaTableViewSubclass
 from mojo.events import publishEvent
+
+class MTTableDelegate(NSObject):
+    def tableView_willDisplayCell_forTableColumn_row_(self, tableView, cell, column, rowId):
+        info = tableView.getTableCellHighlight()
+        ids = (tableView.tableColumns().index(column),rowId)
+        target_rgbValues = info.get(ids)
+        if target_rgbValues is not None:
+            cell.setDrawsBackground_(True)
+
+            if len(target_rgbValues) == 3:
+                r,g,b = target_rgbValues
+                target_backgroundColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(r,g,b,1)
+            elif len(target_rgbValues) == 4:
+                r,g,b,a = target_rgbValues
+                target_backgroundColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(r,g,b,a)
+        else:  cell.setDrawsBackground_(False)
+
+        target_columnId, target_rowId = ids
+        if rowId == target_rowId and tableView.tableColumns()[target_columnId].identifier() == column.identifier() and target_rgbValues is not None:
+            cell.setBackgroundStyle_(0)
+            cell.setBackgroundColor_(target_backgroundColor)
+
+class MTTableViewSubclass(VanillaTableViewSubclass):
+    def init(self):
+        super(MTTableViewSubclass, self).init()
+        self._tableCellHighlight = {}
+        return self
+
+    def getTableCellHighlight(self):
+        return self._tableCellHighlight
+
+    def setTableCellHighlight_(self, info):
+        """
+        :param info: list(dict(rowId,columnId,backgroundColor))
+        :return: None
+        """
+
+        self._tableCellHighlight = info
 
 class MTSliderAxisMenuItem(NSMenuItem):
 
