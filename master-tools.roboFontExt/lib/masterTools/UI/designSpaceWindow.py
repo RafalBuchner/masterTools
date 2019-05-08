@@ -11,7 +11,7 @@ from masterTools import copy2clip, getDev
 from mojo.extensions import ExtensionBundle
 import AppKit
 from mojo.events import addObserver, removeObserver, publishEvent
-from mojo.roboFont import AllFonts, CurrentFont, OpenFont
+from mojo.roboFont import AllFonts, CurrentFont, OpenFont, RFont, RGlyph
 
 from masterTools.features.masterCompatibilityTable_ import CompatibilityTable
 
@@ -427,12 +427,37 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def prepareFontItems(self, designSpaceMasters):
         items = []
+
         for item in designSpaceMasters:
             glyphColor = AppKit.NSColor.secondaryLabelColor()
             if osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"]:
                 # maybe shitty way, but works…
                 glyphColor = AppKit.NSColor.whiteColor()
-            item["glyphExample"] = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+            glyphcell = None
+            # system for finding representation glyph in the master list
+            if self.glyphExampleName in item["font"].keys():
+                glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+
+            elif self.glyphExampleName[0].upper() + self.glyphExampleName[1:] in item["font"].keys() and glyphcell is None:
+                glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName[0].upper() + self.glyphExampleName[1:]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+
+            elif self.glyphExampleName[0].lower() + self.glyphExampleName[1:] in item["font"].keys() and glyphcell is None:
+                 = GlyphCellFactory(item["font"][self.glyphExampleName[0].lower() + self.glyphExampleName[1:]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+            else:
+                if len(item["font"].keys()) > 0  and glyphcell is None:
+                    font = item["font"]
+                    glyphWithContoursFound = False
+                    for glyph in font:
+                        if len(glyph) > 0:
+                            glyphWithContoursFound = True
+                            glyphcell = GlyphCellFactory(glyph, 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+                            break
+                    if not glyphWithContoursFound:
+                        glyphcell = GlyphCellFactory(font[font.keys()[0]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+
+            if glyphcell is not None:
+                item["glyphExample"] = glyphcell
+
             if item["font"].path in [font.path for font in AllFonts()]:
                 item["openedImage"] = opened_font_icon
                 item["opened"] = True
