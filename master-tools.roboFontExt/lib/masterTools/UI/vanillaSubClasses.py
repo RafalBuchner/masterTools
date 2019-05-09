@@ -662,6 +662,7 @@ class MTList(List):
             font = data.get("font")
             textColor = data.get("textColor")
             alignment = data.get("alignment")
+            truncateFromStart = data.get("truncateFromStart")
             keyPath = "arrangedObjects.%s" % key
             if font is not None:
                 if isinstance(font, tuple):
@@ -693,6 +694,10 @@ class MTList(List):
 
             if font is not None and self._tableView.headerView() is not None:
                 column.headerCell().setFont_(font)
+            if truncateFromStart is not None and self._tableView.headerView() is not None:
+                if truncateFromStart:
+                    if isinstance(column.headerCell(), AppKit.NSTextFieldCell):
+                        column.headerCell().setLineBreakMode_(3)
 
             if transparentBackground:
                     column.headerCell().setDrawsBackground_(False)
@@ -702,6 +707,10 @@ class MTList(List):
                 cell = column.dataCell()
                 cell.setDrawsBackground_(False)
                 cell.setStringValue_("")  # cells have weird default values
+                if truncateFromStart is not None:
+                    if truncateFromStart:
+                        if isinstance(cell, AppKit.NSTextFieldCell):
+                            cell.setLineBreakMode_(3)
             else:
                 column.setDataCell_(cell)
             # setting custom font

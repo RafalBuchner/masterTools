@@ -7,6 +7,8 @@ from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
 from mojo.roboFont import AllFonts, RGlyph
 
+key = "com.rafalbuchner.MasterTools.MasterCompatibilityTable"
+
 class CompatibilityTable(object):
     id = "com.rafalbuchner.masterCompatibilityTable"
     txtH = 17
@@ -71,32 +73,38 @@ class CompatibilityTable(object):
         window = info["window"]
         view = CanvasGroup((18, -200, -15, -19-15), delegate=self)
         view.id = self.id
-        view.infoGroup = Group((x,y,210-p,-p))
-        view.infoGroup.title = TextBox((5,0,-0,-p),"info")
-        view.infoGroup.box = Box((0, self.btnH, -0, -0))
-        # view.infoGroup.box.infoTitles = TextBox((0,0,-0,-p), "".join([title+"\n" for title in self.info]))
-        # view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n" for info in self.info]), alignment="right")
-
+        self.infoGroup = Group((0,y,-0,-p))
+        self.infoGroup.title = TextBox((5,0,-0,-p),"info")
+        self.infoGroup.box = Box((0, self.btnH, -0, -0))
         infoDescriptions = [
             dict(title="title"),
-            dict(title="info", alignment="right"),
+            dict(title="info", alignment="right",truncateFromStart=True),
         ]
-        view.infoGroup.box.currentInfo = MTList((0, 0, -0, -0),
+        self.infoGroup.box.currentInfo = MTList((0, 0, -0, -0),
                               [dict(title=title,info=self.info[title]) for title in self.info],
                               columnDescriptions=infoDescriptions,
                               transparentBackground=True,
                               showColumnTitles=False
                                )
 
-        view.box = Box((x+210, y, -p, -p))
-        view.box.list = MTList((0, 0, -0, -0),
+        self.tableContainer = Box((0, y, -0, -p))
+        self.tableContainer.list = MTList((0, 0, -0, -0),
                               self.items,
                               columnDescriptions=self.fontsDescriptor,
                               mainWindow=window,
                               transparentBackground=True,
                               # widthIsHeader=True
                                )
-
+        # this splitView will help user to control width of the table
+        __emptyGroup = Group((0,0,0,-0))
+        paneDescriptors = [
+            dict(view=__emptyGroup, identifier="emptyGroupLeft", canCollapse=False, size=1, minSize=0, resizeFlexibility=False),
+            dict(view=self.infoGroup, identifier="infoPane",size=210,minSize=50,canCollapse=False),
+            dict(view=self.tableContainer, identifier="table", canCollapse=False),
+            dict(view=__emptyGroup, identifier="emptyGroupRight", canCollapse=False, size=1, minSize=0, resizeFlexibility=False),
+        ]
+        view.splitView = SplitView((0, 0, -0, -0), paneDescriptors,dividerStyle="splitter",autosaveName=key+".view.SplitView")
+        view.splitView.getNSSplitView().setDividerStyle_(1)
         window.addGlyphEditorSubview(view)
         self.windows[window] = view # I think overlapping is going on here
 
@@ -114,14 +122,14 @@ class CompatibilityTable(object):
                 self.fonts += [(fontName, item["font"])] # (fontname, font)
             else:
                 self.fonts += [(fontName, opened)] # (fontname, font)
-            self.fontsDescriptor += [{"title": fontName,"alignment":"right"}]
+            self.fontsDescriptor += [{"title": fontName,"alignment":"right","truncateFromStart":True}]
 
         if sender != None:
             for window in self.windows:
                 view = self.windows[window]
-                del view.box
-                view.box = Box((x+210, y, -p, -p))
-                view.box.list = MTList((0, 0, -0, -0),
+                del self.tableContainer
+                self.tableContainer = Box((x+210, y, -p, -p))
+                self.tableContainer.list = MTList((0, 0, -0, -0),
                                   self.items,
                                   columnDescriptions=self.fontsDescriptor,
                                   mainWindow=window,
@@ -129,7 +137,7 @@ class CompatibilityTable(object):
                                   # widthIsHeader=True
                                        )
 
-                #view.infoGroup.box.info = TextBox((x,y,120-p,-p),"".join([f"{self.info[info]}\n"for info in self.info]))
+                #self.infoGroup.box.info = TextBox((x,y,120-p,-p),"".join([f"{self.info[info]}\n"for info in self.info]))
 
     def updateItems(self):
         if self.glyph != None:
@@ -207,8 +215,8 @@ class CompatibilityTable(object):
     def updateErrorHighlighting(self):
         for window in self.windows:
             view = self.windows[window]
-            if hasattr(view.box, "list"):
-                table = view.box.list.getNSTableView()
+            if hasattr(self.tableContainer, "list"):
+                table = self.tableContainer.list.getNSTableView()
                 highlightRowIds = []
                 for i, row in enumerate(self.items):
                     if " ERR" in row["contours"]:
@@ -218,7 +226,7 @@ class CompatibilityTable(object):
                     for columnId in range(len(table.tableColumns())):
                         cellDescription[(columnId,rowId)] = (1,0,0,.3)
 
-                view.box.list.setCellHighlighting(cellDescription)
+                self.tableContainer.list.setCellHighlighting(cellDescription)
 
     def observerGlyphWindowWillClose(self, sender):
         if self.glyph != None:
@@ -235,31 +243,31 @@ class CompatibilityTable(object):
 
         for window in self.windows:
             view = self.windows[window]
-            view.box.list.set(self.items)
-            view.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
+            self.tableContainer.list.set(self.items)
+            self.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
 
     def glyphChanged(self, sender):
         self.updateItems()
         for window in self.windows:
             view = self.windows[window]
-            if hasattr(view.box, "list"):
-                view.box.list.set(self.items)
-            view.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
+            if hasattr(self.tableContainer, "list"):
+                self.tableContainer.list.set(self.items)
+            self.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
 
     def observerDraw(self, notification):
         for window in self.windows:
             view = self.windows[window]
-            if hasattr(view.box, "list"):
-                view.box.list.show(True)
-            view.infoGroup.show(True)
+            if hasattr(self.tableContainer, "list"):
+                self.tableContainer.list.show(True)
+            self.infoGroup.show(True)
 
     def observerDrawPreview(self, notification):
         # hide the view in Preview mode
         for window in self.windows:
             view = self.windows[window]
-            if hasattr(view.box, "list"):
-                view.box.list.show(True)
-            view.infoGroup.show(True)
+            if hasattr(self.tableContainer, "list"):
+                self.tableContainer.list.show(True)
+            self.infoGroup.show(True)
 
     def opaque(self):
         return True
