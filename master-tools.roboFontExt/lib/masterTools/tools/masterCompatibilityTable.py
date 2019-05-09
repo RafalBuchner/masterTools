@@ -2,7 +2,6 @@
 from masterTools.misc.fontPartsMethods import calculateSelection
 from masterTools.UI.vanillaSubClasses import MTList
 from vanilla import *
-import mojo.drawingTools as ctx
 from mojo.events import addObserver, removeObserver
 from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
@@ -75,8 +74,19 @@ class CompatibilityTable(object):
         view.infoGroup = Group((x,y,210-p,-p))
         view.infoGroup.title = TextBox((5,0,-0,-p),"info")
         view.infoGroup.box = Box((0, self.btnH, -0, -0))
-        view.infoGroup.box.infoTitles = TextBox((0,0,-0,-p), "".join([title+"\n" for title in self.info]))
-        view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n" for info in self.info]), alignment="right")
+        # view.infoGroup.box.infoTitles = TextBox((0,0,-0,-p), "".join([title+"\n" for title in self.info]))
+        # view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n" for info in self.info]), alignment="right")
+
+        infoDescriptions = [
+            dict(title="title"),
+            dict(title="info", alignment="right"),
+        ]
+        view.infoGroup.box.currentInfo = MTList((0, 0, -0, -0),
+                              [dict(title=title,info=self.info[title]) for title in self.info],
+                              columnDescriptions=infoDescriptions,
+                              transparentBackground=True,
+                              showColumnTitles=False
+                               )
 
         view.box = Box((x+210, y, -p, -p))
         view.box.list = MTList((0, 0, -0, -0),
@@ -226,7 +236,7 @@ class CompatibilityTable(object):
         for window in self.windows:
             view = self.windows[window]
             view.box.list.set(self.items)
-            view.infoGroup.box.info.set("".join([f"{self.info[info]}\n"for info in self.info]))
+            view.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
 
     def glyphChanged(self, sender):
         self.updateItems()
@@ -234,7 +244,7 @@ class CompatibilityTable(object):
             view = self.windows[window]
             if hasattr(view.box, "list"):
                 view.box.list.set(self.items)
-            view.infoGroup.box.info.set("".join([f"{self.info[info]}\n"for info in self.info]))
+            view.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
 
     def observerDraw(self, notification):
         for window in self.windows:

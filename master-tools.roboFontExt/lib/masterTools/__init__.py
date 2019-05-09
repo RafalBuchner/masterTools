@@ -59,7 +59,6 @@ __all__ = [ "copy2clip", "getDev", ]
 
 if __name__ == "__main__":
 
-
     from vanilla import HUDFloatingWindow, Window
     from random import random
 
