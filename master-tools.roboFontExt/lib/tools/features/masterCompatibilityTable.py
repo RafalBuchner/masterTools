@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from masterTools.UI.vanillaSubClasses import MTlist
+from masterTools.UI.vanillaSubClasses import MTList
 from vanilla import *
 import mojo.drawingTools as ctx
 from mojo.events import addObserver, removeObserver
@@ -145,7 +145,7 @@ class CompatibilityTable(object):
             # create a view with some controls
             view = CanvasGroup((18, -200, -15, -19-15), delegate=self)
 
-            view.list = MTlist((x+210, y, -p, -p),
+            view.list = MTList((x+210, y, -p, -p),
                                   self.items,
                                   columnDescriptions=self.fontsDescriptor,
                                   mainWindow=window,

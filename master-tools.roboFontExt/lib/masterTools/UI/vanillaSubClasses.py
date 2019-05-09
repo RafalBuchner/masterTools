@@ -134,9 +134,9 @@ class MTGlyphPreview(Box):
         # two lists, that will behave
         # like a popup buttons
         group = Group((0,0,220+3*p,100))
-        group._list_hor = MTlist((x, y, 110, -p), self.axesList_hor, columnDescriptions=columnDescriptions_hor,doubleClickCallback=self.menuItemCallback,transparentBackground=True,)
+        group._list_hor = MTList((x, y, 110, -p), self.axesList_hor, columnDescriptions=columnDescriptions_hor,doubleClickCallback=self.menuItemCallback,transparentBackground=True,)
         group._list_hor.axis = "horizontal axis"
-        group._list_ver = MTlist((x+110+p, y, 110, -p), self.axesList_ver, columnDescriptions=columnDescriptions_ver,doubleClickCallback=self.menuItemCallback,transparentBackground=True,)
+        group._list_ver = MTList((x+110+p, y, 110, -p), self.axesList_ver, columnDescriptions=columnDescriptions_ver,doubleClickCallback=self.menuItemCallback,transparentBackground=True,)
         group._list_ver.axis = "vertical axis"
         self.rightClickGroup = [group._list_hor,group._list_ver]
         # setting the appearance of the lists
@@ -471,7 +471,7 @@ class MTDialog(object):
     toolbar = MTToolbar
 
 
-class MTlist(List):
+class MTList(List):
     """
     sepcialCellDescription = {column index:AppKit.NSTableCell subclass}
     """
@@ -638,7 +638,8 @@ class MTlist(List):
             self._setColumnAutoresizing()
 
     def _setColumnAutoresizing(self):
-        self._tableView.setColumnAutoresizingStyle_(AppKit.NSTableViewLastColumnOnlyAutoresizingStyle)
+        # self._tableView.setColumnAutoresizingStyle_(AppKit.NSTableViewLastColumnOnlyAutoresizingStyle)
+        self._tableView.setColumnAutoresizingStyle_(AppKit.NSTableViewUniformColumnAutoresizingStyle)
 
     def _makeColumnsWithColumnDescriptions(self, columnDescriptions, mainWindow, drawBorders, transparentBackground, font, widthIsHeader):
         # make sure that the column widths are in the correct format.

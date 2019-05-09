@@ -66,11 +66,16 @@ if __name__ == "__main__":
     class ListDemo(object):
         def __init__(self):
             self.w = Window((200, 200))
-            columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12)}, {"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"}]
-            self.w.myList = MTlist((20, 20, -20, -40),
-                         [{"One": "A", "Two": "a"}, {"One": "B", "Two": "b"}],
+            columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12)},
+                                  {"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
+                                  {"title": "Three","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
+                                  {"title": "Four","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
+                                  ]
+            self.w.myList = MTList((20, 20, -20, -40),
+                         [{"One": "A", "Two": "a", "Three":"C","Four":"D"},
+                          {"One": "B", "Two": "b", "Three":"c","Four":"d"}],
                          columnDescriptions=columnDescriptions,
-                         rowHeight=30, font=font,transparentBackground=True,
+                         rowHeight=30,transparentBackground=True,
                          selectionCallback=self.selectionCallback )
             self.myDelegate = MTTableDelegate.alloc().init()
             table = self.w.myList.getNSTableView()
@@ -83,7 +88,7 @@ if __name__ == "__main__":
             self.w.myList.setCellHighlighting(cellDescription)
 
 
-    # ListDemo()
+    ListDemo()
     #£
 
 

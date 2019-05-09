@@ -3,7 +3,7 @@ from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
 from masterTools.misc.masterSwitcher import switchMasterTo, resizeOpenedFont
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
-from masterTools.UI.vanillaSubClasses import MTlist, MTDialog, MTGlyphPreview
+from masterTools.UI.vanillaSubClasses import MTList, MTDialog, MTGlyphPreview
 from masterTools.UI.settings import Settings
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from defconAppKit.windows.baseWindow import BaseWindowController
@@ -203,7 +203,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         # creating custom list
         dropSettings = dict(type=AppKit.NSFilenamesPboardType, operation=AppKit.NSDragOperationCopy, callback=self.dropFontListCallback)
 
-        self.fontPane.list = MTlist(
+        self.fontPane.list = MTList(
                         (0,y,-0,-0),
                         [],# test
                         rowHeight=self.rowHeight,
@@ -221,7 +221,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         # setting selection to None for now: (should be set to the Current Font, which should be stored as a separate attr)
         self.fontPane.list.setSelection([])
         #self.w.getNSWindow().makeFirstResponder_(fontPaneNSTable)
-        # setting highlighting style (maybe it should be done in MTlist class)
+        # setting highlighting style (maybe it should be done in MTList class)
         fontPaneNSTable.setSelectionHighlightStyle_(4)
 
         self.fontPaneHeight = 200
@@ -236,7 +236,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         columnDescriptions = [{"title": "name","font":AppKit.NSFont.systemFontOfSize_(10),"width":140}, {"title": "value","textColor":((0,1,0,1)),"font":("Monaco",10),"alignment":"right"}]
 
         initialItems = [dict(name=key)for key in self.designSpaceInfoKeys]
-        self.infoPane.box.list = MTlist(
+        self.infoPane.box.list = MTList(
                         (0,0,-0,-0),
                         initialItems,
                         columnDescriptions=columnDescriptions,

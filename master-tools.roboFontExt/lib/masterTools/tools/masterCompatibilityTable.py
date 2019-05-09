@@ -1,6 +1,6 @@
 # coding: utf-8
 from masterTools.misc.fontPartsMethods import calculateSelection
-from masterTools.UI.vanillaSubClasses import MTlist
+from masterTools.UI.vanillaSubClasses import MTList
 from vanilla import *
 import mojo.drawingTools as ctx
 from mojo.events import addObserver, removeObserver
@@ -79,12 +79,13 @@ class CompatibilityTable(object):
         view.infoGroup.box.info = TextBox((0,0,-0,-p), "".join([f"{self.info[info]}\n" for info in self.info]), alignment="right")
 
         view.box = Box((x+210, y, -p, -p))
-        view.box.list = MTlist((0, 0, -0, -0),
+        view.box.list = MTList((0, 0, -0, -0),
                               self.items,
                               columnDescriptions=self.fontsDescriptor,
                               mainWindow=window,
                               transparentBackground=True,
-                              widthIsHeader=True)
+                              # widthIsHeader=True
+                               )
 
         window.addGlyphEditorSubview(view)
         self.windows[window] = view # I think overlapping is going on here
@@ -103,19 +104,20 @@ class CompatibilityTable(object):
                 self.fonts += [(fontName, item["font"])] # (fontname, font)
             else:
                 self.fonts += [(fontName, opened)] # (fontname, font)
-            self.fontsDescriptor += [{"title": fontName}]
+            self.fontsDescriptor += [{"title": fontName,"alignment":"right"}]
 
         if sender != None:
             for window in self.windows:
                 view = self.windows[window]
                 del view.box
                 view.box = Box((x+210, y, -p, -p))
-                view.box.list = MTlist((0, 0, -0, -0),
+                view.box.list = MTList((0, 0, -0, -0),
                                   self.items,
                                   columnDescriptions=self.fontsDescriptor,
                                   mainWindow=window,
                                   transparentBackground=True,
-                                  widthIsHeader=True)
+                                  # widthIsHeader=True
+                                       )
 
                 #view.infoGroup.box.info = TextBox((x,y,120-p,-p),"".join([f"{self.info[info]}\n"for info in self.info]))
 
