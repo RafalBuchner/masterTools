@@ -11,10 +11,15 @@ that can be changed right after the closing the settingsPanel
 """
 class Settings(object):
     def __init__(self):
+
+        self.currentDesignspacePath = None
+
         self.__default = (
             dict(
             darkMode=False,
+            restoreLastDesignSpace=False,
             previewGlyphName="a",
+            lastDesignspace=None,
 
 
             )
@@ -31,13 +36,12 @@ class Settings(object):
         return self.__dict
 
 
-
-
-
     ############
     # PANEL
     ############
     def closeSettingsPanel(self):
+        if self.currentDesignspacePath is not None:
+            self.__dict['lastDesignspace'] = self.currentDesignspacePath
         setExtensionDefault(key, self.__dict)
 
     def settingsPanel(self,parentWindow,startY=None):
@@ -63,13 +67,20 @@ class Settings(object):
         ## column 1
         #############
         ## darkModeOption
-        self.darkModeOptions = ["dark mode","light mode"]
         self.c1.darkMode_obj = CheckBox((x, y, -p, btnH),
                               "dark mode",
                               callback=self.checkboxCallback)
         self.c1.darkMode_obj.id = "darkMode"
-        # self.c1.darkMode_obj.setTitle("dm")
+
         self.updateSavedSettingsInThePanel(self.c1.darkMode_obj)
+
+        y += btnH + p
+
+        self.c1.restoreLastDesignSpace_obj = CheckBox((x, y, -p, btnH),
+                              "open last designspace at start",
+                              callback=self.checkboxCallback)
+        self.c1.restoreLastDesignSpace_obj.id = "restoreLastDesignSpace"
+        self.updateSavedSettingsInThePanel(self.c1.restoreLastDesignSpace_obj)
 
         y += btnH + p
 
@@ -99,7 +110,9 @@ class Settings(object):
 
     def updateSavedSettingsInThePanel(self, obj):
         title = obj.id
-        settingValue = self.__dict[title]
+        settingValue = self.__dict.get(title)
+
+
         if isinstance(obj, PopUpButton):
             if isinstance(settingValue, str):
                 obj.setTitle(settingValue)
@@ -111,6 +124,7 @@ class Settings(object):
         if isinstance(obj, EditText):
             if isinstance(settingValue, str):
                 obj.set(settingValue)
+
 
     def editTextCallback(self,sender):
         value = sender.get()
@@ -127,3 +141,8 @@ class Settings(object):
         if trueFalse == 1:
             value = True
         self.__dict[sender.id] = value
+        print(self.__dict)
+
+
+
+

@@ -9,15 +9,14 @@ from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from defconAppKit.windows.baseWindow import BaseWindowController
 from masterTools import copy2clip, getDev
 from mojo.extensions import ExtensionBundle
-import AppKit
+import AppKit, os
 from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont, RFont, RGlyph
 
-from masterTools.features.masterCompatibilityTable import CompatibilityTable
-from masterTools.features.kinkManager import KinkManager
+from masterTools.tools.masterCompatibilityTable import CompatibilityTable
+from masterTools.tools.kinkManager import KinkManager
 
-uiSettingsControler = Settings()
-uiSettings = uiSettingsControler.getDict()
+
 
 if getDev():
     import sys, os
@@ -50,7 +49,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     rowHeight = MTDialog.txtH + MTDialog.padding[0] * 2
     winMinSize = (160,519)
     winMaxSize = (6000,5000)
-    glyphExampleName = uiSettings["previewGlyphName"]
+
     fontListColumnDescriptions = [
         dict(title="openedImage",cell=ImageListCell(), width=50),
 
@@ -64,6 +63,11 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             "path", "number of masters", "full compatibility", "axes"
         ]
     def __init__(self, designSpacePath=None):
+        # init settings
+        self.uiSettingsControler = Settings()
+        self.uiSettings = self.uiSettingsControler.getDict()
+        self.glyphExampleName = self.uiSettings["previewGlyphName"]
+
         # tools inits as None:
         self.compatibilityTableTool = None
         self.kinkManagerTool = None
@@ -78,7 +82,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         minSize=self.winMinSize,
         maxSize=self.winMaxSize,
         autosaveName="com.rafalbuchner.designspacewindow",
-        darkMode=uiSettings["darkMode"])
+        darkMode=self.uiSettings["darkMode"])
 
         self.initObservers()
 
@@ -142,8 +146,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.w.bind("close", self.closeDesignSpaceMainWindow)
         self.w.bind("resize", self.resizeDesignSpaceMainWindow)
 
-        if designSpacePath is not None:
-            self.loadDesignSpaceFile(designSpacePath)
+        self.initDesignSpaceIfNeeded(designSpacePath)
 
         self.w.open()
 
@@ -153,6 +156,23 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.w.getNSWindow().makeFirstResponder_(self.glyphPane.prev.getNSBox())
         self.w.getNSWindow().firstResponder().acceptsFirstMouse_(True)
 
+    def initDesignSpaceIfNeeded(self, designSpacePath):
+        if designSpacePath is not None:
+            self.loadDesignSpaceFile(designSpacePath)
+        else:
+            restoreLastDesignSpace = self.uiSettings.get('restoreLastDesignSpace')
+            if restoreLastDesignSpace is not None:
+                if restoreLastDesignSpace:
+                    path = self.uiSettings.get("lastDesignspace")
+                    if path is not None:
+                        if os.path.exists(path):
+                            self.loadDesignSpaceFile(path)
+                        else:
+                            # message:
+                            """
+                            Master-Tools:
+                                Last used designspace file couldn't be loaded, because its path has changed.
+                            """
     def initObservers(self):
         addObserver(self, "currentFontChangeCB", "fontBecameCurrent")
         addObserver(self, "reloadFontListCB", "fontDidOpen")
@@ -268,11 +288,12 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
     def selectionFontListCB(self, sender):
-        rowIndex = sender.getSelection()[0]
-        item = self.designspace.fontMasters[rowIndex]
-        openedFont = self.designspace.getOpenedFont(rowIndex)
-        if openedFont is not None:
-            switchMasterTo(openedFont)
+        if sender.getSelection():
+            rowIndex = sender.getSelection()[0]
+            item = self.designspace.fontMasters[rowIndex]
+            openedFont = self.designspace.getOpenedFont(rowIndex)
+            if openedFont is not None:
+                switchMasterTo(openedFont)
 
     def currentFontChangeCB(self, sender):
         windowTypes = [w.windowName() for w in AppKit.NSApp().orderedWindows() if w.isVisible() if hasattr(w, "windowName")]
@@ -306,14 +327,14 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def settingsBtnCB(self, sender):
         def _close(sender):
-            uiSettingsControler.closeSettingsPanel()
+            self.uiSettingsControler.closeSettingsPanel()
             self.settings.close()
         x,y,p = self.padding
-        self.settings = self.settingsSheet((420, 700), self.w)#,title="settings")
+        self.settings = self.settingsSheet((440, 300), self.w)#,title="settings")
 
         self.settings.closeSettingsBtn = GradientButton((-p-self.btnH, y, self.btnH, self.btnH),imageObject=closeIcon, bordered=False, callback=_close)
         self.settings.helpBtn = HelpButton((x, y, 21, 20))
-        uiSettingsControler.settingsPanel(self.settings,40)
+        self.uiSettingsControler.settingsPanel(self.settings,40)
         self.settings.open()
 
     def fontIsIncludedCB(self, sender):
@@ -349,6 +370,9 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.currentFontChangeCB(None)
 
     def closeDesignSpaceMainWindow(self, sender):
+        print("closing1")
+        self.uiSettingsControler.closeSettingsPanel()
+        print("closing2")
         removeObserver(self, "fontDidOpen")
         removeObserver(self, "fontDidClose")
         removeObserver(self, "fontWillClose")
@@ -415,6 +439,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
 
     def loadDesignSpaceFile(self, path):
+        self.uiSettingsControler.currentDesignspacePath = path
         designSpaceLoaded = self.loadDesignSpace(path)
         lineType =AppKit.NSTableViewSolidHorizontalGridLineMask
         self.fontPane.list.getNSTableView().setGridStyleMask_(lineType)
@@ -442,7 +467,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         for item in designSpaceMasters:
             glyphColor = AppKit.NSColor.secondaryLabelColor()
-            if osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"]:
+            if osVersionCurrent >= osVersion10_14 and self.uiSettings["darkMode"]:
                 # maybe shitty way, but works…
                 glyphColor = AppKit.NSColor.whiteColor()
             glyphcell = None

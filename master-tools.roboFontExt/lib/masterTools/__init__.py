@@ -39,7 +39,7 @@ from masterTools.UI.settings import Settings
 from masterTools.misc.masterSwitcher import *
 # from masterTools.misc.MasterToolsProcessor import *
 # from masterTools.misc.MTMath import *
-from masterTools.features.masterCompatibilityTable import *
+from masterTools.tools.masterCompatibilityTable import *
 
 def copy2clip(txt):
     from AppKit import NSPasteboard, NSStringPboardType
