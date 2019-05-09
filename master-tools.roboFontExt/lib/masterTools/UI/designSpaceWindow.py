@@ -1,7 +1,7 @@
 from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
 from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
 from masterTools.misc.masterSwitcher import switchMasterTo, resizeOpenedFont
-from masterTools.misc import MasterToolsProcessor
+from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
 from masterTools.UI.vanillaSubClasses import MTlist, MTDialog, MTGlyphPreview
 from masterTools.UI.settings import Settings
@@ -13,7 +13,8 @@ import AppKit
 from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont, RFont, RGlyph
 
-from masterTools.features.masterCompatibilityTable_ import CompatibilityTable
+from masterTools.features.masterCompatibilityTable import CompatibilityTable
+from masterTools.features.kinkManager import KinkManager
 
 uiSettingsControler = Settings()
 uiSettings = uiSettingsControler.getDict()
@@ -28,6 +29,7 @@ if getDev():
     bundle = ExtensionBundle(path=pathForBundle, resourcesName=resourcePathForBundle)
 else:
     bundle = ExtensionBundle("master-tools")
+
 table_icon       = bundle.getResourceImage("table-icon", ext='pdf')
 drop_icon        = bundle.getResourceImage("drop-icon", ext='pdf')
 drop_hover_icon  = bundle.getResourceImage("drop-hover-icon", ext='pdf')
@@ -64,6 +66,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     def __init__(self, designSpacePath=None):
         # tools inits as None:
         self.compatibilityTableTool = None
+        self.kinkManagerTool = None
 
         self.designspace = None
         self.fontNameColumn = None
@@ -238,7 +241,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         toolbarItems = [
                 dict(objname="compatibilityTable", imageObject=table_icon, toolTip="comaptibility table", callback=self.compatibilityTableToolitemCB),
-                dict(objname="kinkManager", imageObject=kink_icon, toolTip="kink manager", callback=self.compatibilityTableToolitemCB),
+                dict(objname="kinkManager", imageObject=kink_icon, toolTip="kink manager", callback=self.kinkManagerToolitemCB),
                 dict(objname="incompatibleGlyphsBrowser", imageObject=glyphs_icon, toolTip="incompatible glyphs browser", callback=self.compatibilityTableToolitemCB),
                 dict(objname="problemSolvingTools", imageObject=problem_icon, toolTip="problem solving tools", callback=self.compatibilityTableToolitemCB),
             ]
@@ -316,6 +319,15 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     def fontIsIncludedCB(self, sender):
         self.designspace.fontMasters = sender.get()
         publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
+
+    def kinkManagerToolitemCB(self, sender):
+        # checkbox functionality of btn in Tools Group
+        if sender.status:
+            if self.kinkManagerTool is None:
+                self.kinkManagerTool = KinkManager(self.designspace)
+            self.kinkManagerTool.start(self.designspace)
+        else:
+            self.kinkManagerTool.finish()
 
     def compatibilityTableToolitemCB(self, sender):
         # checkbox functionality of btn in Tools Group
@@ -442,7 +454,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName[0].upper() + self.glyphExampleName[1:]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
 
             elif self.glyphExampleName[0].lower() + self.glyphExampleName[1:] in item["font"].keys() and glyphcell is None:
-                 = GlyphCellFactory(item["font"][self.glyphExampleName[0].lower() + self.glyphExampleName[1:]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+                glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName[0].lower() + self.glyphExampleName[1:]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
             else:
                 if len(item["font"].keys()) > 0  and glyphcell is None:
                     font = item["font"]

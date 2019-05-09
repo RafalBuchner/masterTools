@@ -3,64 +3,69 @@ from vanilla import *
 from defconAppKit.windows.baseWindow import BaseWindowController
 from mojo.events import addObserver, removeObserver
 from mojo.drawingTools import *
+from mojo.roboFont import CurrentGlyph
 import math
 
-import countPoints
+import masterTools.misc.countPoints as countPoints
+from masterTools.misc.MTMath import *
 
 
-class KinksManager(BaseWindowController):
+class KinkManager(object):
+    def __init__(self, designspace):
+        self.designspace = designspace
+        self.glyph = None
 
-    def __init__(self):
-        self.w = FloatingWindow((200, 45), "KinksManager")
-        self.w.startStopButton = Button((10, 10, -10, 22), "Start", callback=self.startStopButtonCallback)
-        # setup basic windwo behavoir (this is an method from the BaseWindowController)
-        self.w.open()
-        self.setUpBaseWindowBehavior()
-        self.g = CurrentGlyph()
-        self.vanillaView = None
-        self.bPointsInfo = []
 
-    def rb_removeObservers(self):
+    def mt_removeObservers(self):
         # gruped removeObserver methods
         removeObserver(self,"viewDidChangeGlyph")
         removeObserver(self,"viewWillChangeGlyph")
+        removeObserver(self,"MT.designspace.fontMastersChanged")
         removeObserver(self,"draw")
-        self.g.removeObserver(self,"Glyph.Changed")
-
-
-        print(">>>>>>>>>>>>>>>\n>>Observers removed\n\n\n\n\n\n\n\n")
+        self.glyph.removeObserver(self,"Glyph.Changed")
 
     def windowCloseCallback(self, sender):
         # this receives a notification whenever the window is closed
         # remove the observers
-        self.rb_removeObservers()
+        self.mt_removeObservers()
         # and send the notification to the super
         super(KinksManager, self).windowCloseCallback(sender)
 
-    def startStopButtonCallback(self, sender):
-        if sender.getTitle() == "Start":
-            self.g.prepareUndo("Show Curvature")
-            self.checkInflections()
-            self.g.performUndo()
-            self.g.update()
+    def start(self, designspace):
+        self.mt_updateFonts(
+            {
+                "designspace" : designspace
+            }
+        )
+        self.glyph = CurrentGlyph()
+        self.bPointsInfo = []
 
-            sender.setTitle("Stop")
-            # here I'm adding my observers
+        self.glyph.prepareUndo("Show Curvature")
+        self.checkInflections()
+        self.glyph.performUndo()
+        self.glyph.update()
 
-            self.g.addObserver(self, "rb_somethingChanged", "Glyph.Changed")
-            addObserver(self, "rb_willChangeGlyphView", "viewWillChangeGlyph")
-            addObserver(self, "rb_didChangeGlyphView", "viewDidChangeGlyph")
-            addObserver(self, "rb_draw", "draw")
-        else:
-            self.g.prepareUndo("Show Curvature")
+        # here I'm adding my observers
+
+        self.glyph.addObserver(self, "mt_glyphChanged", "Glyph.Changed")
+        addObserver(self, "mt_willChangeGlyphView", "viewWillChangeGlyph")
+        addObserver(self, "mt_didChangeGlyphView", "viewDidChangeGlyph")
+        addObserver(self, "mt_draw", "draw")
+        addObserver(self, "mt_updateFonts", "MT.designspace.fontMastersChanged")
+
+    def finish(self):
+            self.glyph.prepareUndo("Show Curvature")
             self.checkInflections()
-            self.g.performUndo()
-            self.g.update()
+            self.glyph.performUndo()
+            self.glyph.update()
             # set "Start" as title for the button
-            sender.setTitle("Start")
-            self.rb_removeObservers()
+            self.mt_removeObservers()
 
-    def rb_draw(self, info):
+    def mt_updateFonts(self, sender):
+        self.designspace = sender['designspace']
+        self.allfonts = [item['font'] for item in self.designspace.includedFonts]
+
+    def mt_draw(self, info):
         def _drawLinePoint(p,s,color,shift=0):
             x,y=p
             save()
@@ -163,34 +168,33 @@ class KinksManager(BaseWindowController):
 
 
 
-    def rb_didChangeGlyphView(self,info):
+    def mt_didChangeGlyphView(self,info):
         # managing different glyphs in the font (adding change-observer to newly opened glyph)
-        self.g = info['glyph']
+        self.glyph = info['glyph']
         try:
-            self.g.addObserver(self, "rb_somethingChanged", "Glyph.Changed")
+            self.glyph.addObserver(self, "mt_glyphChanged", "Glyph.Changed")
             self.checkInflections()
         except:
             pass
 
 
-    def rb_willChangeGlyphView(self,info):
+    def mt_willChangeGlyphView(self,info):
         # managing different glyphs in the font (removing change-observer from just closed glyph)
-        self.g.removeObserver(self,"Glyph.Changed")
+        self.glyph.removeObserver(self,"Glyph.Changed")
 
-    def rb_somethingChanged(self, info):
+    def mt_glyphChanged(self, info):
         self.checkInflections()
 
     def checkInflections(self):
 
-        allfonts = AllFonts().getFontsByFamilyName(CurrentFont().info.familyName)
 
-        if countPoints.compatibilityCheck(self.g, allfonts):
+        if countPoints.compatibilityCheck(self.glyph, self.allfonts):
 
-            gName = self.g.name
+            gName = self.glyph.name
             self.bPointsInfo = [] # 0 - anchor | 1 - angle | 2 - ratio
-            for font in allfonts:
-                for c_i in range(len(self.g)):
-                    c = self.g[c_i]
+            for font in self.allfonts:
+                for c_i in range(len(self.glyph)):
+                    c = self.glyph[c_i]
                     points = c.points
 
                     for p_i in range(len(points)):
@@ -244,5 +248,5 @@ class KinksManager(BaseWindowController):
                             self.bPointsInfo.append(((bpIn,bpAn,bpOut), angle(bpIn,bpOut),(ratioIn,ratioOut)))
 
 
-
-KinksManager()
+if __name__ == "__main__":
+    KinkManager()
