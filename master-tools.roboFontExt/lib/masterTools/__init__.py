@@ -58,36 +58,44 @@ __all__ = [ "copy2clip", "getDev", ]
 ########
 
 if __name__ == "__main__":
-
-    from vanilla import HUDFloatingWindow, Window
-    from random import random
-
-    class ListDemo(object):
-        def __init__(self):
-            self.w = Window((200, 200))
-            columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12)},
-                                  {"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
-                                  {"title": "Three","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
-                                  {"title": "Four","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
-                                  ]
-            self.w.myList = MTList((20, 20, -20, -40),
-                         [{"One": "A", "Two": "a", "Three":"C","Four":"D"},
-                          {"One": "B", "Two": "b", "Three":"c","Four":"d"}],
-                         columnDescriptions=columnDescriptions,
-                         rowHeight=30,transparentBackground=True,
-                         selectionCallback=self.selectionCallback )
-            self.myDelegate = MTTableDelegate.alloc().init()
-            table = self.w.myList.getNSTableView()
-
-            self.w.open()
-        def selectionCallback(self, sender):
-            cellDescription = {
-                  (0,0):(random(),random(),random(),random()),
-                }
-            self.w.myList.setCellHighlighting(cellDescription)
+    from masterTools.UI.designSpaceWindow import DesignSpaceWindow
+    from mojo.UI import OutputWindow
+    from mojo.roboFont import OpenWindow
+    ow = OutputWindow()
+    ow.clear()
+    ow.show()
+    o = OpenWindow(DesignSpaceWindow)
 
 
-    ListDemo()
+    # from vanilla import HUDFloatingWindow, Window
+    # from random import random
+    #
+    # class ListDemo(object):
+    #     def __init__(self):
+    #         self.w = Window((200, 200))
+    #         columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12)},
+    #                               {"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
+    #                               {"title": "Three","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
+    #                               {"title": "Four","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},
+    #                               ]
+    #         self.w.myList = MTList((20, 20, -20, -40),
+    #                      [{"One": "A", "Two": "a", "Three":"C","Four":"D"},
+    #                       {"One": "B", "Two": "b", "Three":"c","Four":"d"}],
+    #                      columnDescriptions=columnDescriptions,
+    #                      rowHeight=30,transparentBackground=True,
+    #                      selectionCallback=self.selectionCallback )
+    #         self.myDelegate = MTTableDelegate.alloc().init()
+    #         table = self.w.myList.getNSTableView()
+    #
+    #         self.w.open()
+    #     def selectionCallback(self, sender):
+    #         cellDescription = {
+    #               (0,0):(random(),random(),random(),random()),
+    #             }
+    #         self.w.myList.setCellHighlighting(cellDescription)
+    #
+    #
+    # ListDemo()
     #£
 
 

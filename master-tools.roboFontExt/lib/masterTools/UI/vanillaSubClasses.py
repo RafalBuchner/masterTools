@@ -231,8 +231,7 @@ class MTGlyphPreview(Box):
         #     h -= 10
         #     x -= 10
         #     y -= 10
-        print(x,y,(w,h))
-
+        # print(x,y,(w,h))
 
         if horizontalAxisName is not None:
             axis_info = self.axesInfo[horizontalAxisName]

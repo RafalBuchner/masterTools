@@ -158,16 +158,23 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def initDesignSpaceIfNeeded(self, designSpacePath):
         if designSpacePath is not None:
+            print("1")
             self.loadDesignSpaceFile(designSpacePath)
         else:
+            print("2")
             restoreLastDesignSpace = self.uiSettings.get('restoreLastDesignSpace')
             if restoreLastDesignSpace is not None:
+                print("2a")
                 if restoreLastDesignSpace:
+                    print("2b")
                     path = self.uiSettings.get("lastDesignspace")
                     if path is not None:
+                        print("2c")
                         if os.path.exists(path):
+                            print("2c1")
                             self.loadDesignSpaceFile(path)
                         else:
+                            print("2c2")
                             # message:
                             """
                             Master-Tools:

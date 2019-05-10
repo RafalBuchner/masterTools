@@ -96,6 +96,11 @@ class CompatibilityTable(object):
                               # widthIsHeader=True
                                )
         # this splitView will help user to control width of the table
+        self.makeSplitView(view)
+        window.addGlyphEditorSubview(view)
+        self.windows[window] = view # I think overlapping is going on here
+
+    def makeSplitView(self, view):
         __emptyGroup = Group((0,0,0,-0))
         paneDescriptors = [
             dict(view=__emptyGroup, identifier="emptyGroupLeft", canCollapse=False, size=1, minSize=0, resizeFlexibility=False),
@@ -105,8 +110,7 @@ class CompatibilityTable(object):
         ]
         view.splitView = SplitView((0, 0, -0, -0), paneDescriptors,dividerStyle="splitter",autosaveName=key+".view.SplitView")
         view.splitView.getNSSplitView().setDividerStyle_(1)
-        window.addGlyphEditorSubview(view)
-        self.windows[window] = view # I think overlapping is going on here
+
 
     def updateFonts(self, sender):
         if sender is not None:
@@ -128,7 +132,8 @@ class CompatibilityTable(object):
             for window in self.windows:
                 view = self.windows[window]
                 del self.tableContainer
-                self.tableContainer = Box((x+210, y, -p, -p))
+                del view.splitView
+                self.tableContainer = Box((0, y, -0, -p))
                 self.tableContainer.list = MTList((0, 0, -0, -0),
                                   self.items,
                                   columnDescriptions=self.fontsDescriptor,
@@ -136,7 +141,7 @@ class CompatibilityTable(object):
                                   transparentBackground=True,
                                   # widthIsHeader=True
                                        )
-
+                self.makeSplitView(view)
                 #self.infoGroup.box.info = TextBox((x,y,120-p,-p),"".join([f"{self.info[info]}\n"for info in self.info]))
 
     def updateItems(self):
@@ -178,6 +183,9 @@ class CompatibilityTable(object):
                 row["contours"] = "C%s" % (i)
 
                 compatible = True
+                if not fontName:
+                    print("Master-Tools-issue!!!")
+                    continue
                 if i < len(columns[fontName]):
                     model = columns[fontName][i]
                 else:
