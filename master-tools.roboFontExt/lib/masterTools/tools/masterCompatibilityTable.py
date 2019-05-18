@@ -6,6 +6,8 @@ from mojo.events import addObserver, removeObserver
 from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
 from mojo.roboFont import AllFonts, RGlyph
+# from masterTools.UI.glyphCellFactory import GlyphCellFactory
+# glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
 
 key = "com.rafalbuchner.MasterTools.MasterCompatibilityTable"
 

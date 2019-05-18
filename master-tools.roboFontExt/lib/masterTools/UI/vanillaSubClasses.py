@@ -226,12 +226,6 @@ class MTGlyphPreview(Box):
         verticalAxisValue = None
         currentLoc = {}
 
-        # if x > 10 and x < w-30 and y > 10 and y < h-30:
-        #     w -= 10
-        #     h -= 10
-        #     x -= 10
-        #     y -= 10
-        # print(x,y,(w,h))
 
         if horizontalAxisName is not None:
             axis_info = self.axesInfo[horizontalAxisName]

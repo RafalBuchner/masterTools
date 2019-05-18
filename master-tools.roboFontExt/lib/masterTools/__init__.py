@@ -67,9 +67,9 @@ if __name__ == "__main__":
     o = OpenWindow(DesignSpaceWindow)
 
 
-    # from vanilla import HUDFloatingWindow, Window
-    # from random import random
-    #
+    from vanilla import HUDFloatingWindow, Window
+    from random import random
+
     # class ListDemo(object):
     #     def __init__(self):
     #         self.w = Window((200, 200))
@@ -90,13 +90,40 @@ if __name__ == "__main__":
     #         self.w.open()
     #     def selectionCallback(self, sender):
     #         cellDescription = {
-    #               (0,0):(random(),random(),random(),random()),
+    #               (0,0):CheckBoxListCell("dupa")
     #             }
     #         self.w.myList.setCellHighlighting(cellDescription)
     #
     #
     # ListDemo()
-    #£
+
+    class ListDemo(object):
+        def __init__(self):
+
+            columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12)},{"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},{"title": "Three","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},{"title": "Four","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},]
+
+            self.w = FloatingWindow((400, 700), minSize=(100,100))
+            self.w.list = MTList(
+                            (0,0,-0,-0),
+                            [{"One": "A", "Two": "a", "Three":"C","Four":"D"},
+                            {"One": "B", "Two": "b", "Three":"c","Four":"d"}],# test
+                            rowHeight=250,
+                            columnDescriptions=columnDescriptions,
+                            selectionCallback=self.selectionCallback
+            )
+            self.w.open()
+        def selectionCallback(self, sender):
+            path = '/Users/rafalbuchner/Dropbox/tests/Book-Rafal-03.ufo'
+            # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
+            font = OpenFont(path, False)
+            glyph=GlyphCellFactory(font['a'], 20,   20, glyphColor=NSColor.blackColor())
+            print(type(glyph))
+            cellDescription = {
+                  (0,0):glyph
+                }
+            self.w.list.setCellHighlighting(cellDescription)
+    ListDemo()
+
 
 
 

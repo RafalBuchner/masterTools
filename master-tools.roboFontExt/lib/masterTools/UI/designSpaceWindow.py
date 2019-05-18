@@ -500,6 +500,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                         glyphcell = GlyphCellFactory(font[font.keys()[0]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
 
             if glyphcell is not None:
+                # print("celltype!!!",type(glyphcell))
                 item["glyphExample"] = glyphcell
 
             if item["font"].path in [font.path for font in AllFonts()]:

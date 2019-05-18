@@ -1,19 +1,14 @@
 from AppKit import NSColor, NSGraphicsContext, NSForegroundColorAttributeName, NSAttributedString, NSFont, \
     NSFontAttributeName, NSAffineTransform, NSRectFill, NSRectFillListUsingOperation, NSImage, NSParagraphStyleAttributeName, \
     NSBezierPath, NSMutableParagraphStyle, NSCenterTextAlignment, NSLineBreakByTruncatingMiddle, NSCompositeSourceOver
-from defconAppKit.tools.drawing import colorToNSColor
-from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
-from masterTools.UI.settings import Settings
-uiSettings = Settings().getDict()
+
+if __name__ != "__main__":
+    from masterTools.UI.settings import Settings
+    uiSettings = Settings().getDict()
 
 GlyphCellHeaderHeight = 14
 GlyphCellMinHeightForHeader = 40
-# def reloadGlyphColor():
-#     glyphColor = NSColor.secondaryLabelColor()
-#     print(uiSettings["darkMode"],osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"])
-#     if osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"]:
-#         # maybe shitty way, but works…
-#         glyphColor = NSColor.whiteColor()
+
 
 cellBackgroundColor = NSColor.clearColor()
 cellHeaderBaseColor = NSColor.colorWithCalibratedWhite_alpha_(0.968, 1.0)
@@ -50,10 +45,7 @@ class GlyphCellFactoryDrawingController(object):
     Subclasses may override the layer drawing methods to customize
     the appearance of cells.
     """
-    # glyphColor = NSColor.secondaryLabelColor()
-    # if osVersionCurrent >= osVersion10_14 and uiSettings["darkMode"]:
-    #     # maybe shitty way, but works…
-    #     glyphColor = NSColor.whiteColor()
+
 
     def __init__(self, glyph, font, width, height, bufferPercent, glyphColor, drawHeader=False, drawMetrics=False):
         self.glyph = glyph
@@ -221,13 +213,13 @@ if __name__=="__main__":
 
     class ListDemo(object):
         def __init__(self):
-            path = '/Users/rafaelbuchner/dropbox-rafal/Dropbox/tests/Book-Rafal-03.ufo'
+            path = '/Users/rafalbuchner/Dropbox/tests/Book-Rafal-03.ufo'
             # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
             font = OpenFont(path, False)
             fontListColumnDescriptions = [
                 dict(title="glyph",cell=ImageListCell(), width=220)
                 ]
-            items = [dict(glyph=GlyphCellFactory(g, 240, 240))for g in font]
+            items = [dict(glyph=GlyphCellFactory(g, 240, 240, glyphColor=NSColor.blackColor()))for g in font]
             self.w = HUDFloatingWindow((400, 700))
             self.w.list = List(
                             (0,0,-0,-0),
