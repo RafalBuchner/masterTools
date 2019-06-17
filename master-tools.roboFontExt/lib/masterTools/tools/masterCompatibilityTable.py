@@ -165,20 +165,25 @@ class CompatibilityTable(object):
             maxNumOfContours = 0
             maxNumOfComponents = 0
             for masterName, font in self.fonts:
-                glyph = font[gName]
-                columns[masterName] = []
-                countCountour = 0
-                countComponent = 0
-                for c in glyph:
-                    columns[masterName] += [len(c.points)]
-                    countCountour += 1
-                for comp in glyph.components:
-                    columns[masterName] += [comp.baseGlyph]
-                    countComponent += 1
-                if countCountour > maxNumOfContours:
-                    maxNumOfContours = countCountour
-                if countComponent > maxNumOfComponents:
-                    maxNumOfComponents = countComponent
+                if gName in font.keys():
+                    glyph = font[gName]
+                    columns[masterName] = []
+                    countCountour = 0
+                    countComponent = 0
+                    for c in glyph:
+                        columns[masterName] += [len(c.points)]
+                        countCountour += 1
+                    for comp in glyph.components:
+                        columns[masterName] += [comp.baseGlyph]
+                        countComponent += 1
+                    if countCountour > maxNumOfContours:
+                        maxNumOfContours = countCountour
+                    if countComponent > maxNumOfComponents:
+                        maxNumOfComponents = countComponent
+                else:
+                    columns[masterName] = ["!NO GLYPH!"]*17
+                    pass
+
 
             for i in range(maxNumOfContours-1,-1,-1):
                 row = {}
@@ -228,13 +233,26 @@ class CompatibilityTable(object):
             if hasattr(self.tableContainer, "list"):
                 table = self.tableContainer.list.getNSTableView()
                 highlightRowIds = []
-                for i, row in enumerate(self.items):
+                highlightColumnIds = []
+
+                for rowId, row in enumerate(self.items):
                     if " ERR" in row["contours"]:
-                        highlightRowIds += [i]
+                        highlightRowIds += [rowId]
+                    if rowId == 0:
+                        # it is enough to iterate only once: every other row
+                        # of column with '!NO GLYPH!' will have the same value
+                        for columnId, cellText in enumerate( row.values() ):
+                            if '!NO GLYPH!' == cellText:
+                                highlightColumnIds += [columnId]
+
                 cellDescription = {}
-                for rowId in highlightRowIds:
+                for rowId in range(len(self.items)):
                     for columnId in range(len(table.tableColumns())):
-                        cellDescription[(columnId,rowId)] = (1,0,0,.3)
+                        if rowId in highlightRowIds:
+                            cellDescription[(columnId,rowId)] = (1,0,0,.3)
+                        if columnId in highlightColumnIds:
+                            cellDescription[(columnId,rowId)] = (1,0,0.7,.3)
+
 
                 self.tableContainer.list.setCellHighlighting(cellDescription)
 

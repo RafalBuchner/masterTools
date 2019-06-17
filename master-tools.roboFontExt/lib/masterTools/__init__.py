@@ -1,6 +1,4 @@
 from __future__ import print_function, division, absolute_import
-import importlib
-import mojo
 
 ######################################################
 ######################################################
@@ -122,7 +120,7 @@ if __name__ == "__main__":
                   (0,0):glyph
                 }
             self.w.list.setCellHighlighting(cellDescription)
-    ListDemo()
+    # ListDemo()
 
 
 
