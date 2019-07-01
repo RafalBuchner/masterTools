@@ -13,7 +13,7 @@ import AppKit, os
 from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont, RFont, RGlyph
 
-from masterTools.tools.masterCompatibilityTable import CompatibilityTable
+from masterTools.tools.masterCompatibilityTable import CompatibilityTableWindow
 from masterTools.tools.kinkManager import KinkManager
 
 
@@ -69,6 +69,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.glyphExampleName = self.uiSettings["previewGlyphName"]
 
         # tools inits as None:
+        self.activeTools = []
         self.compatibilityTableTool = None
         self.kinkManagerTool = None
 
@@ -361,11 +362,13 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         # checkbox functionality of btn in Tools Group
         if sender.status:
             if self.compatibilityTableTool is None:
-                self.compatibilityTableTool = CompatibilityTable(self.designspace)
+                self.compatibilityTableTool = CompatibilityTableWindow(self.designspace)
             self.compatibilityTableTool.start()
+            self.activeTools += [self.compatibilityTableTool]
 
         else:
             self.compatibilityTableTool.finish()
+            self.activeTools.remove(self.compatibilityTableTool)
 
 
     def fontWillCloseCB(self, info):
@@ -385,6 +388,9 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         removeObserver(self, "fontWillClose")
         removeObserver(self, "fontBecameCurrent")
         self.glyphPane.prev.mainWindowClose()
+
+        for tool in self.activeTools:
+            tool.finish()
 
     def resizeDesignSpaceMainWindow(self, sender):
         x,y,p = self.padding

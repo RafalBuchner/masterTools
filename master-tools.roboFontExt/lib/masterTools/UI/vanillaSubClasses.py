@@ -1,19 +1,16 @@
 # coding: utf-8
 from vanilla import HUDFloatingWindow, FloatingWindow, TextBox, Sheet, Window, Group, GradientButton
 
-#rom AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSSize, NSArrayController, NSTableViewLastColumnOnlyAutoresizingStyle, NSLeftTextAlignment, NSRightTextAlignment, NSCenterTextAlignment, NSJustifiedTextAlignment, NSNaturalTextAlignment
-import AppKit, importlib
-import masterTools
+import AppKit
 from masterTools.UI.objcBase import *
 from mojo.events import addObserver, removeObserver, publishEvent
 from vanilla.vanillaList import *
-from vanilla.vanillaBase import _breakCycles, _calcFrame, VanillaCallbackWrapper, VanillaError, osVersionCurrent, osVersion10_14, osVersion10_7, osVersion10_10
-from vanilla.py23 import python_method
+from vanilla.vanillaBase import  VanillaCallbackWrapper, VanillaError, osVersionCurrent, osVersion10_14
 from mojo.glyphPreview import GlyphPreview
 from mojo.roboFont import OpenWindow, RGlyph, CurrentGlyph
 from fontTools.designspaceLib import InstanceDescriptor
 from mojo.UI import MenuBuilder
-from vanilla import Slider, Box
+from vanilla import Box, HUDFloatingWindow
 from copy import deepcopy
 _textAlignmentMap = {
     "left":AppKit.NSLeftTextAlignment,
@@ -354,8 +351,6 @@ class MTToolbar(Group):
 
         sender.callback(sender) # calling custom toggle callback
 
-
-
 class MTSheet(Sheet):
     pass
     # def __init__(self, posSize, parentWindow, title="", minSize=None, maxSize=None, textured=False,
@@ -429,7 +424,7 @@ class MTSheet(Sheet):
 
 
 
-class MTHUDFloatingWindow(Window):
+class MTWindowWrapper(Window):
     #appearance = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameAqua)
     nsWindowClass = MTWindow
 
@@ -451,15 +446,59 @@ class MTHUDFloatingWindow(Window):
             else:
                 self._window.setAppearance_(self.appearanceLight)
 
+class MTFloatingWindowWrapper(Window):
+    #appearance = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameAqua)
+    # nsWindowClass = MTWindowWrapper
+    nsWindowClass = AppKit.NSPanel
+    nsWindowLevel = AppKit.NSFloatingWindowLevel
+
+    nsWindowStyleMask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSTitledWindowMask | AppKit.NSBorderlessWindowMask
+    if osVersionCurrent >= osVersion10_14:
+        appearanceDark = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameDarkAqua)
+        appearanceLight = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameAqua)
+
+
+    def __init__(self, posSize, title="", minSize=None, maxSize=None, textured=False,
+                autosaveName=None, closable=True, miniaturizable=True, initiallyVisible=True,
+                fullScreenMode=None, titleVisible=True, fullSizeContentView=False, screen=None, darkMode=False, noTitleBar=False):
+        super().__init__(posSize, title=title, minSize=minSize, maxSize=maxSize, textured=textured,
+                    autosaveName=autosaveName, closable=closable, miniaturizable=miniaturizable, initiallyVisible=initiallyVisible,
+                    fullScreenMode=fullScreenMode, titleVisible=titleVisible, fullSizeContentView=fullSizeContentView, screen=screen)
+        self._window.setBecomesKeyOnlyIfNeeded_(True)
+        if noTitleBar:
+            self._window.setTitlebarAppearsTransparent_(True)
+            self._window.setTitleVisibility_(0)
+        if osVersionCurrent >= osVersion10_14:
+            if darkMode:
+                self._window.setAppearance_(self.appearanceDark)
+            else:
+                self._window.setAppearance_(self.appearanceLight)
+    def show(self):
+        """
+        Show the window if it is hidden.
+        """
+        # don't make key!
+        self._window.orderFront_(None)
+
 
 class MTDialog(object):
     """
-    in subclass you have to describe self.w as instance of MTHUDFloatingWindow (you can use class attr window for it)
+    in subclass you have to describe self.w as instance of MTWindowWrapper (you can use class attr window for it)
     """
     txtH = 17
     btnH = 24
     padding = (10,10,10)
-    window = MTHUDFloatingWindow
+    window = MTWindowWrapper
+    settingsSheet = MTSheet
+    toolbar = MTToolbar
+class MTFloatingDialog(object):
+    """
+    in subclass you have to describe self.w as instance of MTWindowWrapper (you can use class attr window for it)
+    """
+    txtH = 17
+    btnH = 24
+    padding = (10,10,10)
+    window = MTFloatingWindowWrapper
     settingsSheet = MTSheet
     toolbar = MTToolbar
 

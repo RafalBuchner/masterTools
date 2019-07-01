@@ -128,7 +128,6 @@ class MTPanel(NSPanel):
         point = event.locationInWindow()
         x,y = (point.x-origin.x,point.y-origin.y)
 
-# go to objcBase
 class MTWindow(NSWindow):
     def validateMenuItem_(self, menuItem):
         return True

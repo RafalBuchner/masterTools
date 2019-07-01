@@ -155,15 +155,15 @@ class GlyphCellFactoryDrawingController(object):
     # def drawCellGlyph(self):
     #     layers = self.font.layers
     #     if isinstance(layers,tuple):
-    #         layerOrder = layers
-    #     else:
-    #         layerOrder = layers.layerOrder
-    #     for layerName in reversed(layerOrder):
-    #         if isinstance(layers,tuple):
-    #             layer = layerName
-    #         else:
-    #             layer = layers[layerName]
-    #         if self.glyph.name not in layer:
+    ####         layerOrder = layers
+    ####     else:
+    ####        layerOrder = layers.layerOrder
+    ##     for layerName in reversed(layerOrder):
+    ###         if isinstance(layers,tuple):
+    ###             layer = layerName
+    ##         else:
+    ##             layer = layers[layerName]
+    ##         if self.glyph.name not in layer:
     #             continue
     #         layerColor = None
     #         if layer.color is not None:
