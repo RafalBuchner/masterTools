@@ -1,10 +1,21 @@
 # coding: utf-8
 from AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSTextFieldCell, NSSize, NSMenuItem, NSBox, NSPanel, NSWindow, NSObject, NSImage
+import objc
 from vanilla import Group, TextBox, Slider
 from vanilla.vanillaList import VanillaTableViewSubclass
 from mojo.events import publishEvent
 
 class MTTableDelegate(NSObject):
+    def initWithSelectionPremission_(self, allowSelection):
+        self = objc.super(MTTableDelegate, self).init()
+        if self is None: return None
+
+        self.allowSelection = allowSelection
+        return self
+
+    def tableView_shouldSelectRow_(self, table, row):
+        return self.allowSelection
+
     def tableView_willDisplayCell_forTableColumn_row_(self, tableView, cell, column, rowId):
         info = tableView.getTableCellHighlight()
         ids = (tableView.tableColumns().index(column),rowId)

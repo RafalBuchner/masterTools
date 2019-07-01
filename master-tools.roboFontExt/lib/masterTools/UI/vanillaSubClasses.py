@@ -508,7 +508,7 @@ class MTList(List):
     sepcialCellDescription = {column index:AppKit.NSTableCell subclass}
     """
     nsTableViewClass = MTTableViewSubclass
-    delegateClass= MTTableDelegate
+    delegateClass = MTTableDelegate
 
     def __init__(self, posSize, items, dataSource=None, columnDescriptions=None, showColumnTitles=True,
                 selectionCallback=None, doubleClickCallback=None, editCallback=None, menuCallback=None,
@@ -518,6 +518,7 @@ class MTList(List):
                 drawVerticalLines=False, drawHorizontalLines=False,
                 autohidesScrollers=True, drawFocusRing=False, rowHeight=17.0,
                 drawBorders=False,
+                allowSelection=True,
                 transparentBackground=False,
                 selfDropSettings=None,
                 selfWindowDropSettings=None,
@@ -647,7 +648,8 @@ class MTList(List):
         self._dragSettings = dragSettings
 
         # set up a delegate class
-        self._delegate = self.delegateClass.alloc().init()
+
+        self._delegate = self.delegateClass.alloc().initWithSelectionPremission_(allowSelection)
         self._tableView.setDelegate_(self._delegate)
 
     def setCellHighlighting(self, cellDescriptions):

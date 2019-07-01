@@ -1,7 +1,6 @@
 # coding: utf-8
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor # for testing
 from defconAppKit.windows.baseWindow import BaseWindowController
-
 from masterTools.UI.settings import Settings
 from masterTools.misc.fontPartsMethods import calculateSelection
 from masterTools.UI.vanillaSubClasses import MTList,  MTFloatingDialog
@@ -59,7 +58,8 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                                                 listItems,
                                                 columnDescriptions=infoDescriptions,
                                                 transparentBackground=True,
-                                                showColumnTitles=False
+                                                showColumnTitles=False,
+                                                allowSelection=False
                                                 )
 
         self.tableContainer = Box((0, y, -0, -p))
@@ -67,9 +67,8 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
         self.tableContainer.list = MTList((0, 0, -0, -0),
                                           self.items,
                                           columnDescriptions=self.fontsDescriptor,
-                                          # mainWindow=window,
                                           transparentBackground=True,
-                                          # widthIsHeader=True
+                                          allowSelection=False
                                           )
         # this splitView will help user to control width of the table
         self.makeSplitView()
@@ -87,7 +86,7 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
 
     def makeSplitView(self):
         paneDescriptors = [
-            dict(view=self.infoGroup, identifier="infoPane", size=210, minSize=50, canCollapse=False),
+            dict(view=self.infoGroup, identifier="infoPane", size=210, canCollapse=False),
             dict(view=self.tableContainer, identifier="table", canCollapse=False),
         ]
         self.view.splitView = SplitView((0, 0, -0, -0), paneDescriptors, dividerStyle="splitter",
@@ -144,7 +143,7 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                               columnDescriptions=self.fontsDescriptor,
                               mainWindow=window,
                               transparentBackground=True,
-                              # widthIsHeader=True
+                              allowSelection=False
                                )
         # this splitView will help user to control width of the table
         self.makeSplitView()
@@ -194,9 +193,8 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
             self.tableContainer.list = MTList((0, 0, -0, -0),
                               self.items,
                               columnDescriptions=self.fontsDescriptor,
-                              # mainWindow=window,
                               transparentBackground=True,
-                              # widthIsHeader=True
+                              allowSelection=False
                                    )
             self.makeSplitView()
 
@@ -389,7 +387,8 @@ class CompatibilityTable(object):
                               [dict(title=title,info=self.info[title]) for title in self.info],
                               columnDescriptions=infoDescriptions,
                               transparentBackground=True,
-                              showColumnTitles=False
+                              showColumnTitles=False,
+                              allowSelection=False
                                )
 
         self.tableContainer = Box((0, y, -0, -p))
@@ -398,7 +397,7 @@ class CompatibilityTable(object):
                               columnDescriptions=self.fontsDescriptor,
                               mainWindow=window,
                               transparentBackground=True,
-                              # widthIsHeader=True
+                              allowSelection=False
                                )
         # this splitView will help user to control width of the table
         self.makeSplitView(view)
@@ -444,7 +443,7 @@ class CompatibilityTable(object):
                                   columnDescriptions=self.fontsDescriptor,
                                   mainWindow=window,
                                   transparentBackground=True,
-                                  # widthIsHeader=True
+                                  allowSelection=False
                                        )
                 self.makeSplitView(view)
                 #self.infoGroup.box.info = TextBox((x,y,120-p,-p),"".join([f"{self.info[info]}\n"for info in self.info]))
