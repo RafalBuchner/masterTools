@@ -651,6 +651,8 @@ class MTList(List):
 
         self._delegate = self.delegateClass.alloc().initWithSelectionPremission_(allowSelection)
         self._tableView.setDelegate_(self._delegate)
+        if not allowSelection:
+            self.setSelection([])
 
     def setCellHighlighting(self, cellDescriptions):
         """
