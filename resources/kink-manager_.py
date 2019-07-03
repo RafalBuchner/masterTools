@@ -35,7 +35,12 @@ def lenghtAB(A,B):
         return lengthAB
     else:
         return 0
-
+def dPoint(p, s, txt=""):
+    r = s/2
+    x, y = p
+    rect(x-r, y-r, s, s)
+    if txt:
+        text(txt,x+s,y+s)
 
 class KinksManager(BaseWindowController):
 
@@ -90,48 +95,7 @@ class KinksManager(BaseWindowController):
             self.rb_removeObservers()
 
     def rb_draw(self, info):
-        def _drawLinePoint(p,s,color,shift=0):
-            x,y=p
-            save()
-            stroke(*color)
-            translate(x,y)
-            line((0,s/2-shift),(0,-s/2-shift))
-            restore()
 
-        def _drawPoint(p,s,color):
-            x,y=p
-            save()
-            stroke(None)
-            fill(*color)
-            translate(x,y)
-            oval(-s/2,-s/2,s,s)
-            restore()
-
-        def _drawAngle(anchor,pointIn,pointOut):
-            x,y = anchor
-            x1 = lenghtAB(pointIn,anchor)
-            x2 = lenghtAB(pointOut,anchor) *-1
-
-
-            line_ref = (
-                rotate((x1,0),-math.pi/2 - angle,(0,0)),
-                rotate((x2,0),-math.pi/2 - angle,(0,0))
-                )
-
-            save()
-            translate(x,y)
-
-            _drawPoint(line_ref[0],10*scale,color)
-            _drawPoint(line_ref[1],10*scale,color)
-
-            fill(None)
-            strokeWidth(5*scale)
-            stroke(*color)
-            line(*line_ref)
-            stroke(None)
-            fill(*color)
-
-            restore()
         if  len(self.bPointsInfo) > 0:
             accuracyAngle = 2 # IMPORTANT, you should make a slider, or combobox
             accuracyRatio = 3
@@ -142,53 +106,12 @@ class KinksManager(BaseWindowController):
             pointOut = selectedInfo[0][2]
             angleBp = selectedInfo[1]
             ratioInBP = selectedInfo[2][0]
-
-            for info in self.bPointsInfo[1:]:
-                index = self.bPointsInfo.index(info)
-                angle = info[1]
-                if round(angle,accuracyAngle) == round(angleBp,accuracyAngle):
-                    color = [0,0.9,0.5,.4]
-                    angle = angleBp-2*math.pi
-                else:
-                    color = (1,0.1,0,.4)
-
-                _drawAngle(bPoint,pointIn,pointOut)
-
-                # draw ratio
-                x,y = bPoint
-                shift = 30*scale
-                ratioIn,ratioOut = info[2]
-
-                unit = 400
-                lengthOfLine = unit*scale
-                A,B = ((-lengthOfLine/2,-shift*(index+1)),(lengthOfLine/2,-shift*(index+1)))
-
-                if round(ratioIn,accuracyRatio) == round(ratioInBP,accuracyRatio):
-                    color = [0,0.9,0.5,.4]
-                else:
-                    color = (1,0.1,0,.4)
-
-                strokeWidth(3*scale)
-                stroke(*color)
-
-                # print round(ratioIn,accuracyRatio), round(ratioInBP,accuracyRatio)
-
-                save()
-                translate(x,y)
-
-                _drawLinePoint(A,10*scale,color)
-                _drawLinePoint(B,10*scale,color)
-                line(A,B)
-                _drawLinePoint(((ratioIn*unit-unit/2)*scale,-shift*(index+1)),10*scale,color)
-
-                if index == 1:
-                    line((-lengthOfLine/2,-shift),(lengthOfLine/2,-shift))
-                    _drawLinePoint((-lengthOfLine/2,-shift),10*scale,color)
-                    _drawLinePoint((lengthOfLine/2,-shift),10*scale,color)
-                    _drawLinePoint(((ratioInBP*unit-unit/2)*scale,-shift),len(self.bPointsInfo)*40*scale,color,(len(self.bPointsInfo)*40*scale)/2-5*scale)
+            fill(1,0,0,.3)
+            dPoint(pointIn,20*scale,'pointIn')
+            dPoint(bPoint,20*scale,'bPoint')
+            dPoint(pointOut,20*scale,'pointOut')
 
 
-                restore()
 
 
 
@@ -229,28 +152,35 @@ class KinksManager(BaseWindowController):
                             pSel = p
 
                             if p_i+1 > len(points)-1:
+                                print(">>>>>>>>>> 1")
                                 i_one = -1
                             else:
+                                print(">>>>>>>>>> 2")
                                 i_one = p_i + 1
 
                             if p_i+2 > len(points)-1:
+                                print(">>>>>>>>>> 3")
                                 nearer = -1
                                 middle = 0
                                 further = 1
                             else:
+                                print(">>>>>>>>>> 4")
                                 i_two = p_i + 2
 
-                            if points[i_one].type == "offCurve" and pSel.type == "offCurve" and points[i_one] != pSel:
+                            if points[i_one].type == "offcurve" and pSel.type == "offcurve" and points[i_one] != pSel:
+                                print(">>>>>>>>>> 5")
                                 nearer = p_i-2
                                 middle = p_i-1
                                 further = p_i
 
-                            elif (points[i_one].type == "curve" or points[i_one].type == "line") and pSel.type == "offCurve":
+                            elif (points[i_one].type == "curve" or points[i_one].type == "line") and pSel.type == "offcurve":
+                                print(">>>>>>>>>> 6")
                                 nearer = p_i
                                 middle = i_one
                                 further = i_two
 
                             elif pSel.type == "line" or pSel.type == "curve":
+                                print(">>>>>>>>>> 7")
                                 nearer = p_i-1
                                 middle = p_i
                                 further = i_one

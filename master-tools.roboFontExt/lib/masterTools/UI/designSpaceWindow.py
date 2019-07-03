@@ -15,6 +15,8 @@ from mojo.roboFont import AllFonts, CurrentFont, OpenFont, RFont, RGlyph
 
 from masterTools.tools.masterCompatibilityTable import CompatibilityTableWindow
 from masterTools.tools.kinkManager import KinkManager
+from masterTools.tools.incompatibilityGlyphBrowserTool import IncompatibleGlyphsBrowser
+from masterTools.tools.problemSolvingTools import ProblemSolvingTools
 
 
 
@@ -69,9 +71,11 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.glyphExampleName = self.uiSettings["previewGlyphName"]
 
         # tools inits as None:
-        self.activeTools = []
+        self.toolObjects = []
         self.compatibilityTableTool = None
         self.kinkManagerTool = None
+        self.incompatibleGlyphsBrowserTool = None
+        self.problemSolvingTools = None
 
         self.designspace = None
         self.fontNameColumn = None
@@ -270,8 +274,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         toolbarItems = [
                 dict(objname="compatibilityTable", imageObject=table_icon, toolTip="comaptibility table", callback=self.compatibilityTableToolitemCB),
                 dict(objname="kinkManager", imageObject=kink_icon, toolTip="kink manager", callback=self.kinkManagerToolitemCB),
-                dict(objname="incompatibleGlyphsBrowser", imageObject=glyphs_icon, toolTip="incompatible glyphs browser", callback=self.compatibilityTableToolitemCB),
-                dict(objname="problemSolvingTools", imageObject=problem_icon, toolTip="problem solving tools", callback=self.compatibilityTableToolitemCB),
+                dict(objname="incompatibleGlyphsBrowser", imageObject=glyphs_icon, toolTip="incompatible glyphs browser", callback=self.incompatibleGlyphsBrowserToolitemCB),
+                dict(objname="problemSolvingTools", imageObject=problem_icon, toolTip="problem solving tools", callback=self.problemSolvingToolsitemCB),
             ]
         self.toolsPane.toolbar = self.toolbar((x,y), items=toolbarItems, itemSize=self.btnH*3, padding=20)
         #self.toolsPane.toolbar = self.toolbar((x,y), items=toolbarItems, itemSize=self.btnH*3, padding=0)
@@ -349,12 +353,33 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.designspace.fontMasters = sender.get()
         publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
+    def problemSolvingToolsitemCB(self, sender):
+        # checkbox functionality of btn in Tools Group
+        if sender.status:
+            if self.problemSolvingTools is None:
+                self.problemSolvingTools = ProblemSolvingTools(self.designspace)
+            self.problemSolvingTools.start()
+            self.toolObjects += [self.problemSolvingTools]
+        else:
+            self.problemSolvingTools.finish()
+
+    def incompatibleGlyphsBrowserToolitemCB(self, sender):
+        # checkbox functionality of btn in Tools Group
+        if sender.status:
+            if self.incompatibleGlyphsBrowserTool is None:
+                self.incompatibleGlyphsBrowserTool = IncompatibleGlyphsBrowser(self.designspace)
+            self.incompatibleGlyphsBrowserTool.start()
+            self.toolObjects += [self.incompatibleGlyphsBrowserTool]
+        else:
+            self.incompatibleGlyphsBrowserTool.finish()
+
     def kinkManagerToolitemCB(self, sender):
         # checkbox functionality of btn in Tools Group
         if sender.status:
             if self.kinkManagerTool is None:
                 self.kinkManagerTool = KinkManager(self.designspace)
             self.kinkManagerTool.start(self.designspace)
+            self.toolObjects += [self.kinkManagerTool]
         else:
             self.kinkManagerTool.finish()
 
@@ -364,11 +389,11 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             if self.compatibilityTableTool is None:
                 self.compatibilityTableTool = CompatibilityTableWindow(self.designspace)
             self.compatibilityTableTool.start()
-            self.activeTools += [self.compatibilityTableTool]
+            self.toolObjects += [self.compatibilityTableTool]
 
         else:
             self.compatibilityTableTool.finish()
-            self.activeTools.remove(self.compatibilityTableTool)
+
 
 
     def fontWillCloseCB(self, info):
@@ -380,17 +405,16 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.currentFontChangeCB(None)
 
     def closeDesignSpaceMainWindow(self, sender):
-        print("closing1")
         self.uiSettingsControler.closeSettingsPanel()
-        print("closing2")
         removeObserver(self, "fontDidOpen")
         removeObserver(self, "fontDidClose")
         removeObserver(self, "fontWillClose")
         removeObserver(self, "fontBecameCurrent")
         self.glyphPane.prev.mainWindowClose()
 
-        for tool in self.activeTools:
-            tool.finish()
+        for tool in self.toolObjects:
+            if tool.isActive:
+                tool.finish()
 
     def resizeDesignSpaceMainWindow(self, sender):
         x,y,p = self.padding

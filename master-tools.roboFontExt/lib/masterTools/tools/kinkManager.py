@@ -14,6 +14,7 @@ class KinkManager(object):
     def __init__(self, designspace):
         self.designspace = designspace
         self.glyph = None
+        self.isActive = False
 
 
     def mt_removeObservers(self):
@@ -44,6 +45,7 @@ class KinkManager(object):
         self.checkInflections()
         self.glyph.performUndo()
         self.glyph.update()
+        self.isActive = True
 
         # here I'm adding my observers
 
@@ -54,12 +56,13 @@ class KinkManager(object):
         addObserver(self, "mt_updateFonts", "MT.designspace.fontMastersChanged")
 
     def finish(self):
-            self.glyph.prepareUndo("Show Curvature")
-            self.checkInflections()
-            self.glyph.performUndo()
-            self.glyph.update()
-            # set "Start" as title for the button
-            self.mt_removeObservers()
+        self.glyph.prepareUndo("Show Curvature")
+        self.checkInflections()
+        self.glyph.performUndo()
+        self.glyph.update()
+        # set "Start" as title for the button
+        self.mt_removeObservers()
+        self.isActive = False
 
     def mt_updateFonts(self, sender):
         self.designspace = sender['designspace']
@@ -193,16 +196,19 @@ class KinkManager(object):
             gName = self.glyph.name
             self.bPointsInfo = [] # 0 - anchor | 1 - angle | 2 - ratio
             for font in self.allfonts:
-                for c_i in range(len(self.glyph)):
-                    c = self.glyph[c_i]
+                for c_i, c in enumerate(self.glyph):
                     points = c.points
 
-                    for p_i in range(len(points)):
-
-                        p = points[p_i]
+                    for p_i, p in enumerate(points):
                         if p.selected:
                             pSel = p
 
+                            nearer = None
+                            middle = None
+                            further = None
+                            i_one = None
+                            i_two = None
+                            # avoiding situation when one of 3 points has index 0
                             if p_i+1 > len(points)-1:
                                 i_one = -1
                             else:
@@ -215,12 +221,13 @@ class KinkManager(object):
                             else:
                                 i_two = p_i + 2
 
-                            if points[i_one].type == "offCurve" and pSel.type == "offCurve" and points[i_one] != pSel:
+                            if points[i_one].type == "offcurve" and pSel.type == "offcurve" and points[i_one] != pSel:
                                 nearer = p_i-2
                                 middle = p_i-1
                                 further = p_i
 
-                            elif (points[i_one].type == "curve" or points[i_one].type == "line") and pSel.type == "offCurve":
+                            elif (points[i_one].type == "curve" or points[i_one].type == "line") and pSel.type == "offcurve":
+                                # dragged
                                 nearer = p_i
                                 middle = i_one
                                 further = i_two
@@ -233,19 +240,19 @@ class KinkManager(object):
 
                             g_ref = font[gName]
                             p_ref = g_ref[c_i].points
+                            if nearer is not None:
+                                bpIn,bpAn,bpOut = (p_ref[nearer],p_ref[middle],p_ref[further])
+                                bpIn = (bpIn.x,bpIn.y)
+                                bpAn = (bpAn.x,bpAn.y)
+                                bpOut = (bpOut.x,bpOut.y)
 
-                            bpIn,bpAn,bpOut = (p_ref[nearer],p_ref[middle],p_ref[further])
-                            bpIn = (bpIn.x,bpIn.y)
-                            bpAn = (bpAn.x,bpAn.y)
-                            bpOut = (bpOut.x,bpOut.y)
 
-
-                            lenIn  = lenghtAB(bpAn,bpIn)
-                            lenOut = lenghtAB(bpAn,bpOut)
-                            whole = lenIn+lenOut
-                            ratioIn = lenIn/whole
-                            ratioOut = lenOut/whole
-                            self.bPointsInfo.append(((bpIn,bpAn,bpOut), angle(bpIn,bpOut),(ratioIn,ratioOut)))
+                                lenIn  = lenghtAB(bpAn,bpIn)
+                                lenOut = lenghtAB(bpAn,bpOut)
+                                whole = lenIn+lenOut
+                                ratioIn = lenIn/whole
+                                ratioOut = lenOut/whole
+                                self.bPointsInfo.append(((bpIn,bpAn,bpOut), angle(bpIn,bpOut),(ratioIn,ratioOut)))
 
 
 if __name__ == "__main__":

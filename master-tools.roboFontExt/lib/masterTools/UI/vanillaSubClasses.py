@@ -268,6 +268,7 @@ class MTGlyphPreview(Box):
         removeObserver(self, "MT.prevRightMouseDown")
         removeObserver(self, "currentGlyphChanged")
 
+
 class MTToolbar(Group):
     """
         items = [{
@@ -277,12 +278,12 @@ class MTToolbar(Group):
             callback=callback)
             }]
     """
+
     def __init__(self, pos, items, itemSize, padding=0):
 
-
-        x,y=pos
-        w = len(items)*itemSize+(len(items)-1)*padding
-        posSize = (x,y,w,itemSize)
+        x, y = pos
+        w = len(items) * itemSize + (len(items) - 1) * padding
+        posSize = (x, y, w, itemSize)
         super().__init__(posSize)
 
         self.toolNames = []
@@ -290,48 +291,44 @@ class MTToolbar(Group):
         self.padding = padding
         x = 0
         for item in items:
-            posSize = (x,0,itemSize,itemSize)
+            posSize = (x, 0, itemSize, itemSize)
             self.toolNames += [item["objname"]]
 
             toolbarItemObj = self.ToolbarItem(
-                posSize,
-                imageObject=item["imageObject"],
-                toolTip=item["toolTip"],
-                callback=item["callback"])
-            setattr(self,item["objname"],toolbarItemObj)
+                posSize, imageObject=item["imageObject"], toolTip=item["toolTip"], callback=item["callback"])
+            setattr(self, item["objname"], toolbarItemObj)
             x += itemSize + padding
         self.len = len(items)
 
     def setPosSize(self, posSize):
-        x,y,w,h = posSize
-        oldx,oldy,oldw,oldh = self.getPosSize()
-        standardWidth = self.len * self.itemSize + self.padding * self.len-1
+        x, y, w, h = posSize
+        oldx, oldy, oldw, oldh = self.getPosSize()
+        standardWidth = self.len * self.itemSize + self.padding * self.len - 1
 
-        super().setPosSize((oldx,oldy,w,h))
+        super().setPosSize((oldx, oldy, w, h))
         if w > standardWidth:
             for i, objName in enumerate(self.toolNames):
                 toolbarItem = getattr(self, objName)
-                item_x,item_y,item_w,item_h = toolbarItem.getPosSize()
-                factor = w/standardWidth
-                item_x = (w-standardWidth)/2+ i*item_w
-                toolbarItem.setPosSize((item_x,item_y,item_w,item_h))
+                item_x, item_y, item_w, item_h = toolbarItem.getPosSize()
+                factor = w / standardWidth
+                item_x = (w - standardWidth) / 2 + i * item_w
+                toolbarItem.setPosSize((item_x, item_y, item_w, item_h))
         elif w < standardWidth:
             for i, objName in enumerate(self.toolNames):
                 toolbarItem = getattr(self, objName)
-                item_x,item_y,item_w,item_h = toolbarItem.getPosSize()
-                factor = w/standardWidth
-                item_h = factor*self.itemSize
-                item_w = w/self.len
-                item_y = self.itemSize/2-item_h/2
-                item_x = i*item_w
+                item_x, item_y, item_w, item_h = toolbarItem.getPosSize()
+                factor = w / standardWidth
+                item_h = factor * self.itemSize
+                item_w = w / self.len
+                item_y = self.itemSize / 2 - item_h / 2
+                item_x = i * item_w
 
-                toolbarItem.setPosSize((item_x,item_y,item_w,item_h))
+                toolbarItem.setPosSize((item_x, item_y, item_w, item_h))
                 toolbarItem.getNSButton().setImageScaling_(factor)
 
-
-
     def ToolbarItem(self, posSize, imageObject=None, toolTip=None, callback=None):
-        toolbaritem = GradientButton(posSize,imageObject=imageObject, bordered=False, callback=self.toolbarItemStatusUpdateCB)
+        toolbaritem = GradientButton(posSize, imageObject=imageObject, bordered=False,
+                                     callback=self.toolbarItemStatusUpdateCB)
         if toolTip is not None:
             toolbaritem.getNSButton().setToolTip_(toolTip)
         toolbaritem.status = False
@@ -349,7 +346,7 @@ class MTToolbar(Group):
             sender.status = True
             buttonObject.setBordered_(True)
 
-        sender.callback(sender) # calling custom toggle callback
+        sender.callback(sender)  # calling custom toggle callback
 
 class MTSheet(Sheet):
     pass
@@ -452,7 +449,8 @@ class MTFloatingWindowWrapper(Window):
     nsWindowClass = AppKit.NSPanel
     nsWindowLevel = AppKit.NSFloatingWindowLevel
 
-    nsWindowStyleMask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSTitledWindowMask | AppKit.NSBorderlessWindowMask
+    # nsWindowStyleMask = AppKit.NSHUDWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSTitledWindowMask | AppKit.NSBorderlessWindowMask
+    nsWindowStyleMask = AppKit.NSTitledWindowMask | AppKit.NSUtilityWindowMask | AppKit.NSBorderlessWindowMask | AppKit.NSClosableWindowMask
     if osVersionCurrent >= osVersion10_14:
         appearanceDark = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameDarkAqua)
         appearanceLight = AppKit.NSAppearance.appearanceNamed_(AppKit.NSAppearanceNameAqua)
@@ -465,6 +463,8 @@ class MTFloatingWindowWrapper(Window):
                     autosaveName=autosaveName, closable=closable, miniaturizable=miniaturizable, initiallyVisible=initiallyVisible,
                     fullScreenMode=fullScreenMode, titleVisible=titleVisible, fullSizeContentView=fullSizeContentView, screen=screen)
         self._window.setBecomesKeyOnlyIfNeeded_(True)
+        self._window.standardWindowButton_(AppKit.NSWindowMiniaturizeButton).setHidden_(True)
+        self._window.standardWindowButton_(AppKit.NSWindowZoomButton).setHidden_(True)
         if noTitleBar:
             self._window.setTitlebarAppearsTransparent_(True)
             self._window.setTitleVisibility_(0)
