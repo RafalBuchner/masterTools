@@ -297,6 +297,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         else:
             self.designspace.setOpenedFont(rowIndex)
+            
         publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
     def selectionFontListCB(self, sender):
@@ -351,7 +352,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def fontIsIncludedCB(self, sender):
         self.designspace.fontMasters = sender.get()
-        publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
+        # publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
     def problemSolvingToolsitemCB(self, sender):
         # checkbox functionality of btn in Tools Group
@@ -553,9 +554,9 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.loadInfo()
 
         self.glyphPane.prev.setDesignSpace(self.designspace)
-        self.glyphPane.prev.setGlyph("a")
+        # self.glyphPane.prev.setGlyph("a")
 
-        publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
+        # publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
         return True
 
 def test():

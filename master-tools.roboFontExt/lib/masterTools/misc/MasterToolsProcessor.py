@@ -1,8 +1,11 @@
 from ufoProcessor import *
+from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import *
+from pprint import pprint
 # from mojo.roboFont import AllFonts, RFont, OpenFont
 
 class MasterToolsProcessor(DesignSpaceProcessor):
+
     fontClass = RFont
     layerClass = RLayer
     glyphClass = RGlyph
@@ -15,6 +18,10 @@ class MasterToolsProcessor(DesignSpaceProcessor):
     groupsClass = RGroups
     infoClass = RInfo
     featuresClass = RFeatures
+
+    def __init__(self, readerClass=None, writerClass=None, fontClass=None, ufoVersion=3, useVarlib=False):
+        super(MasterToolsProcessor, self).__init__(readerClass=readerClass, writerClass=writerClass, fontClass=fontClass, ufoVersion=ufoVersion, useVarlib=useVarlib)
+        self.openedFonts = []
 
     def _instantiateFont(self, path):
         for font in AllFonts():
@@ -62,7 +69,9 @@ class MasterToolsProcessor(DesignSpaceProcessor):
                     self.fonts[sourceDescriptor.name] = None
                     self.problems.append("source ufo not found at %s" % (sourceDescriptor.path))
         self.glyphNames = list(names)
-
+        if not reload:
+            self._setFontMasters()
+    def _setFontMasters(self):
         self.fontMasters = []
         for info in self.getFonts():
             font = info[0]
@@ -85,10 +94,40 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def setOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        assert item.get("openedFont") is None, "font was already opened"
+        assert item.get("openedFont") is None, "WARNING font was already opened"
         item["openedFont"] = OpenFont(item["path"])
+        item["openedFont"].addObserver(self, 'includedFontChangedEvent', 'Font.Changed')
+        
+        self.openedFonts.append(item['openedFont'])
 
     def delOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        assert item.get("openedFont") is not None, "font is NoneType, cannot delete"
+        assert item.get("openedFont") is not None, "WARNING font is NoneType, cannot delete"
+        item["openedFont"].removeObserver(self, 'Font.Changed')
         del item["openedFont"]
+        self.openedFonts.remove(item['openedFont'])
+    
+    def __del__(self):
+        if len(self.openedFonts) > 0:
+            for font in self.openedFonts:
+                font.removeObserver(self, 'Font.Changed')
+
+
+    # observers
+    def includedFontChangedEvent(self, notification):
+        changedOpenedFont = notification.object
+        for item in self.fontMasters:
+            if item['font'].path == changedOpenedFont.path:
+                item['font'] = changedOpenedFont
+        publishEvent("MT.designspace.fontMastersChanged", designspace=self)
+        # self.loadFonts(reload=True)
+
+    @property
+    def fontMasters(self):
+        return self.__fontMasters
+
+    @fontMasters.setter
+    def fontMasters(self, value):
+        self.__fontMasters = value
+        publishEvent("MT.designspace.fontMastersChanged", designspace=self)
+

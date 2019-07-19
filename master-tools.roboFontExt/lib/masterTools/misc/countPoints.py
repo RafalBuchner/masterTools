@@ -29,7 +29,7 @@ def compatibilityCheck(currGlyph,fonts):
     for font in fonts:
 
         glyph = font[currGlyph.name]
-
+        print(currGlyph.font, type(currGlyph), font, type(glyph))
         if not currGlyph.isCompatible(glyph):
             compatibility = False
             break
