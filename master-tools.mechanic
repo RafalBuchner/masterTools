@@ -1,10 +1,10 @@
 extensionName: master-tools
-repository: https://github.com/RafalBuchner/master-tools
+repository: https://gitlab.com/RafalBuchner/master-tools
 extensionPath: master-tools.roboFontExt
 description: Master Tools.
 developer: Rafał Buchner
 developerURL: http://rafalbuchner.com/
 tags: [ master compatibility designspace tools ufo robofont ]
-infoPath: https://github.com/RafalBuchner/master-tools/blob/master/master-tools.roboFontExt/info.plist?private_token=9c8bf05e06fade372940fb394caed8b8c1247593
-zipPath:  https://github.com/RafalBuchner/master-tools/archive/master.zip?private_token=9c8bf05e06fade372940fb394caed8b8c1247593
-icon:     https://raw.github.com/RafalBuchner/master-tools/blob/master/icon.png?private_token=9c8bf05e06fade372940fb394caed8b8c1247593
+infoPath: https://gitlab.com/api/v4/projects/13122320/repository/files/master-tools.roboFontExt%2Finfo.plist/raw?ref=master&private_token=NytpLqih5uYu_BH6S8Fi
+zipPath:  https://gitlab.com/api/v4/projects/13122320/repository/archive.zip?sha=master&private_token=NytpLqih5uYu_BH6S8Fi
+icon:     https://gitlab.com/api/v4/projects/13122320/repository/files/icon.png/raw?ref=master&private_token=NytpLqih5uYu_BH6S8Fi
