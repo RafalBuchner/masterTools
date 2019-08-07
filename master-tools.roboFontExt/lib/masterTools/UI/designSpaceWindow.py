@@ -290,10 +290,11 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         rowIndex = sender.getSelection()[0]
         item = self.designspace.fontMasters[rowIndex]
+        print('???>>>>>>> doubleClickFontListCB', item['fontname'])
         openedFont = self.designspace.getOpenedFont(rowIndex)
         if openedFont is not None:
-            openedFont.close()
             self.designspace.delOpenedFont(rowIndex)
+            openedFont.close()
 
         else:
             self.designspace.setOpenedFont(rowIndex)
@@ -395,10 +396,14 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         else:
             self.compatibilityTableTool.finish()
 
-
-
     def fontWillCloseCB(self, info):
-        pass
+        openedFont = info.get('font')
+        if openedFont is not None:
+            fontlist = [item['font'] for item in self.designspace.fontMasters]
+            print(fontlist)
+            rowIndex = fontlist.index(openedFont)
+            self.designspace.delOpenedFont(rowIndex)
+            openedFont.close()
 
     def reloadFontListCB(self, info):
         self.items = self.prepareFontItems(self.designspace.fontMasters) ###TEST
@@ -501,6 +506,13 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.infoPane.box.list.set(items)
 
     def prepareFontItems(self, designSpaceMasters):
+        '''
+            initializing main font list items, 
+            opened/closed icon (filled/hollow circle),
+            font file names,
+            that include glyphcell examples,
+            master position in the designspace,
+        '''
         items = []
 
         for item in designSpaceMasters:
@@ -538,11 +550,12 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 item["openedImage"] = opened_font_icon
                 item["opened"] = True
 
-                # opening robofont object, to be able to show it in the RF intergace
-                for font in AllFonts():
-                    if font.path == item["font"].path:
-                        item["robofont.font"] = font
-                        break
+                #### 9.08.2019
+                # # opening robofont object, to be able to show it in the RF intergace
+                # for font in AllFonts():
+                #     if font.path == item["font"].path:
+                #         item["robofont.font"] = font
+                #         break
             else:
                 item["openedImage"] = closed_font_icon
                 item["opened"] = False

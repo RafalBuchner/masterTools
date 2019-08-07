@@ -86,6 +86,29 @@ class MasterToolsProcessor(DesignSpaceProcessor):
                 positionString=" ".join([str(position)+": "+str(info[1][position]) for position in info[1]])
                 )]
         self._fontsLoaded = True
+    def __new__testit__getOpenedFont(self, rowIndex):
+        item = self.fontMasters[rowIndex]
+        if item['font'].hasInterface():
+            return item['font']
+        return None
+
+    def __new__testit__setOpenedFont(self, rowIndex):
+        item = self.fontMasters[rowIndex]
+        print(item['font'].hasInterface())
+        assert item['font'].hasInterface(), "WARNING font was already opened"
+        item['font'].showInterface()
+        print('!!!>>>>>> setOpenedFont', item['fontname'])
+        item['font'].addObserver(self, 'includedFontChangedEvent', 'Font.Changed')
+        
+        self.openedFonts.append(item['font'])
+
+    def __new__testit__delOpenedFont(self, rowIndex):
+        item = self.fontMasters[rowIndex]
+        assert not item["font"], "WARNING font is NoneType, cannot delete"
+        item["font"].removeObserver(self, 'Font.Changed')
+        print('!!!>>>>>> delOpenedFont', item['fontname'])
+        self.openedFonts.remove(item['font'])
+        # del item["openedFont"]
 
     def getOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
@@ -96,16 +119,19 @@ class MasterToolsProcessor(DesignSpaceProcessor):
         item = self.fontMasters[rowIndex]
         assert item.get("openedFont") is None, "WARNING font was already opened"
         item["openedFont"] = OpenFont(item["path"])
+        print('!!!>>>>>> setOpenedFont', item['fontname'])
         item["openedFont"].addObserver(self, 'includedFontChangedEvent', 'Font.Changed')
         
         self.openedFonts.append(item['openedFont'])
+
 
     def delOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
         assert item.get("openedFont") is not None, "WARNING font is NoneType, cannot delete"
         item["openedFont"].removeObserver(self, 'Font.Changed')
-        del item["openedFont"]
+        print('!!!>>>>>> delOpenedFont', item['fontname'])
         self.openedFonts.remove(item['openedFont'])
+        del item["openedFont"]
     
     def __del__(self):
         if len(self.openedFonts) > 0:
