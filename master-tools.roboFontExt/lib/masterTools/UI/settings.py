@@ -10,6 +10,27 @@ that can be changed right after the closing the settingsPanel
 
 """
 class Settings(object):
+    defaultMasterColors = [(0.9, 0.1, 0.29),
+                                 (0.24, 0.71, 0.29),
+                                 (1.0, 0.88, 0.1),
+                                 (0.0, 0.51, 0.78),
+                                 (0.96, 0.51, 0.19),
+                                 (0.57, 0.12, 0.71),
+                                 (0.27, 0.94, 0.94),
+                                 (0.94, 0.2, 0.9),
+                                 (0.82, 0.96, 0.24),
+                                 (0.98, 0.75, 0.75),
+                                 (0.0, 0.5, 0.5),
+                                 (0.9, 0.75, 1.0),
+                                 (0.67, 0.43, 0.16),
+                                 (1.0, 0.98, 0.78),
+                                 (0.5, 0.0, 0.0),
+                                 (0.67, 1.0, 0.76),
+                                 (0.5, 0.5, 0.0),
+                                 (1.0, 0.84, 0.71),
+                                 (0.0, 0.0, 0.5),
+                                 (0.5, 0.5, 0.5),
+                                 ]
     def __init__(self):
 
         self.currentDesignspacePath = None
@@ -20,17 +41,14 @@ class Settings(object):
             restoreLastDesignSpace=False,
             previewGlyphName="a",
             lastDesignspace=None,
-
-
+            masterColors=self.defaultMasterColors
             )
-
         )
         self.__dict = self.__default # for now
         if getExtensionDefault(key) is not None:
             for setting in self.__dict:
                 if setting in getExtensionDefault(key).keys():
                     self.__dict[setting] = getExtensionDefault(key)[setting]
-        print(self.__dict)
 
     def getDict(self):
         return self.__dict
