@@ -150,8 +150,6 @@ class KinkManager(object):
                 strokeWidth(3*scale)
                 stroke(*color)
 
-                # print round(ratioIn,accuracyRatio), round(ratioInBP,accuracyRatio)
-
                 save()
                 translate(x,y)
 

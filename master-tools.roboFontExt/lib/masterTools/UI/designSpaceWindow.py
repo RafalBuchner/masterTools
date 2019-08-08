@@ -163,23 +163,16 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def initDesignSpaceIfNeeded(self, designSpacePath):
         if designSpacePath is not None:
-            print("1")
             self.loadDesignSpaceFile(designSpacePath)
         else:
-            print("2")
             restoreLastDesignSpace = self.uiSettings.get('restoreLastDesignSpace')
             if restoreLastDesignSpace is not None:
-                print("2a")
                 if restoreLastDesignSpace:
-                    print("2b")
                     path = self.uiSettings.get("lastDesignspace")
                     if path is not None:
-                        print("2c")
                         if os.path.exists(path):
-                            print("2c1")
                             self.loadDesignSpaceFile(path)
                         else:
-                            print("2c2")
                             # message:
                             """
                             Master-Tools:
@@ -290,10 +283,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         rowIndex = sender.getSelection()[0]
         item = self.designspace.fontMasters[rowIndex]
-        print('???>>>>>>> doubleClickFontListCB', item['fontname'])
         openedFont = self.designspace.getOpenedFont(rowIndex)
         if openedFont is not None:
-            print('???>>>>>>> doubleClickFontListCB openedFont', openedFont)
             self.designspace.delOpenedFont(rowIndex)
             openedFont.close()
 
@@ -401,7 +392,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         openedFont = info.get('font')
         if openedFont is not None:
             fontlist = [item['font'] for item in self.designspace.fontMasters]
-            # print(fontlist)
             rowIndex = fontlist.index(openedFont)
             self.designspace.delOpenedFont(rowIndex)
             openedFont.close()
@@ -544,7 +534,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                         glyphcell = GlyphCellFactory(font[font.keys()[0]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
 
             if glyphcell is not None:
-                # print("celltype!!!",type(glyphcell))
                 item["glyphExample"] = glyphcell
 
             if item["font"].path in [font.path for font in AllFonts()]:

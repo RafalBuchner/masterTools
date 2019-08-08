@@ -245,7 +245,6 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
 
                 compatible = True
                 if not fontName:
-                    print("Master-Tools-issue!!!")
                     continue
                 if i < len(columns[fontName]):
                     model = columns[fontName][i]

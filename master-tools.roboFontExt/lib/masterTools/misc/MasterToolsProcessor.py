@@ -101,10 +101,8 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def setOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        # print(item['font'].hasInterface())
         assert not item['font'].hasInterface(), "WARNING font was already opened"
         item['font'].openInterface()
-        print('!!!>>>>>> setOpenedFont', item['fontname'])
         item['font'].addObserver(self, 'includedFontChangedEvent', 'Font.Changed')
         
         self.openedFonts.append(item['font'])
@@ -113,7 +111,6 @@ class MasterToolsProcessor(DesignSpaceProcessor):
         item = self.fontMasters[rowIndex]
         assert item['font'].hasInterface(), "WARNING font is already closed, cannot delete"
         item["font"].removeObserver(self, 'Font.Changed')
-        print('!!!>>>>>> delOpenedFont', item['fontname'])
         self.openedFonts.remove(item['font'])
     
     def __del__(self):
