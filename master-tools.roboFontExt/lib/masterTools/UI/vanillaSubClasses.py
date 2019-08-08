@@ -248,40 +248,23 @@ class MTGlyphPreview(Box):
 
 
     def _getInterpolation(self,name,loc):
-        instance = None
-        for master in self.designspace.fontMasters:
-            if loc == master['designSpacePosition']:
-                instance = master['font']
-                break
-        if instance is None:
-            instanceDescriptor = InstanceDescriptor()
-            instanceDescriptor.location = loc
+        instanceDescriptor = InstanceDescriptor()
+        instanceDescriptor.location = loc
 
-            glyphMutator = self.designspace.getGlyphMutator(name, decomposeComponents=True)
-            glyphMath = glyphMutator.makeInstance(instanceDescriptor.location, bend=True)
-            glyph = RGlyph().naked()
-            iterGlyph = glyphMath.extractGlyph(glyph, glyph.getPointPen(), onlyGeometry=True)
-            if iterGlyph is not None:
-                glyph = RGlyph()
-                pen = glyph.getPen()
-                iterGlyph.draw(pen)
-                glyph.moveBy((-glyphMath.width/2,-20))
-                glyph.transformBy((.4, 0, 0, .4, 0, 0))
-                return glyph
-            else:
-                return glyph
+        glyphMutator = self.designspace.getGlyphMutator(name, decomposeComponents=True)
+        glyphMath = glyphMutator.makeInstance(instanceDescriptor.location, bend=True)
+        glyph = RGlyph().naked()
+        iterGlyph = glyphMath.extractGlyph(glyph, glyph.getPointPen(), onlyGeometry=True)
+        if iterGlyph is not None:
+            glyph = RGlyph()
+            pen = glyph.getPen()
+            iterGlyph.draw(pen)
+            glyph.moveBy((-glyphMath.width/2,-20))
+            glyph.transformBy((.4, 0, 0, .4, 0, 0))
+            return glyph
+        else:
+            return glyph
 
-
-            # instance = self.designspace.makeInstance(instanceDescriptor, glyphNames=[name],pairs=[], bend=True)
-        # if name in instance.keys():
-        #     self.interpolationProblemMessage.show(False)
-        #     self.glyphView.show(True)
-        #     return instance[name]
-        # else:
-        #     self.interpolationProblemMessage.show(True)
-        #     self.interpolationProblemMessage.set(self.interpolationProblemMessageTxt)
-        #     self.glyphView.show(False)
-        #     return instance[name]
 
     def mainWindowClose(self):
         removeObserver(self, "MT.prevMouseDragged")

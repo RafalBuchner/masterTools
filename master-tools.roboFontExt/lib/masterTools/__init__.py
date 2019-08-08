@@ -115,7 +115,7 @@ if __name__ == "__main__":
             # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
             font = OpenFont(path, False)
             glyph=GlyphCellFactory(font['a'], 20,   20, glyphColor=NSColor.blackColor())
-            print(type(glyph))
+            # print(type(glyph))
             cellDescription = {
                   (0,0):glyph
                 }
