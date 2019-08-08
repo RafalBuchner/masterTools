@@ -1,6 +1,6 @@
 from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
 from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
-from masterTools.misc.masterSwitcher import switchMasterTo, resizeOpenedFont
+from masterTools.misc.masterSwitcher import switchMasterTo
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
 from masterTools.UI.vanillaSubClasses import MTList, MTDialog, MTGlyphPreview
@@ -293,6 +293,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         print('???>>>>>>> doubleClickFontListCB', item['fontname'])
         openedFont = self.designspace.getOpenedFont(rowIndex)
         if openedFont is not None:
+            print('???>>>>>>> doubleClickFontListCB openedFont', openedFont)
             self.designspace.delOpenedFont(rowIndex)
             openedFont.close()
 
@@ -400,7 +401,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         openedFont = info.get('font')
         if openedFont is not None:
             fontlist = [item['font'] for item in self.designspace.fontMasters]
-            print(fontlist)
+            # print(fontlist)
             rowIndex = fontlist.index(openedFont)
             self.designspace.delOpenedFont(rowIndex)
             openedFont.close()

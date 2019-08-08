@@ -21,13 +21,8 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def __init__(self, readerClass=None, writerClass=None, fontClass=None, ufoVersion=3, useVarlib=False):
         super(MasterToolsProcessor, self).__init__(readerClass=readerClass, writerClass=writerClass, fontClass=fontClass, ufoVersion=ufoVersion, useVarlib=useVarlib)
-        self.openedFonts = []
+        self.openedFonts = AllFonts()
 
-    def _instantiateFont(self, path):
-        for font in AllFonts():
-            if font.path == path and font.path is not None:
-                return font
-        return RFont(path, showInterface=False)
 
 
     @property
@@ -51,6 +46,12 @@ class MasterToolsProcessor(DesignSpaceProcessor):
     def compareGlyphs(self, fontNames, *glyphNames):
         pass
 
+    def _instantiateFont(self, path):
+        for font in self.openedFonts:
+            if font.path == path:
+                return font
+        return RFont(path, showInterface=False)
+
     def loadFonts(self, reload=False):
         # Load the fonts and find the default candidate based on the info flag
         if self._fontsLoaded and not reload:
@@ -71,6 +72,7 @@ class MasterToolsProcessor(DesignSpaceProcessor):
         self.glyphNames = list(names)
         if not reload:
             self._setFontMasters()
+
     def _setFontMasters(self):
         self.fontMasters = []
         for info in self.getFonts():
@@ -86,52 +88,33 @@ class MasterToolsProcessor(DesignSpaceProcessor):
                 positionString=" ".join([str(position)+": "+str(info[1][position]) for position in info[1]])
                 )]
         self._fontsLoaded = True
-    def __new__testit__getOpenedFont(self, rowIndex):
+
+    def getOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        if item['font'].hasInterface():
+        hasInterface = item['font'].hasInterface
+        if not isinstance(hasInterface, bool):
+            hasInterface = hasInterface()
+
+        if hasInterface:
             return item['font']
         return None
 
-    def __new__testit__setOpenedFont(self, rowIndex):
+    def setOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        print(item['font'].hasInterface())
-        assert item['font'].hasInterface(), "WARNING font was already opened"
-        item['font'].showInterface()
+        # print(item['font'].hasInterface())
+        assert not item['font'].hasInterface(), "WARNING font was already opened"
+        item['font'].openInterface()
         print('!!!>>>>>> setOpenedFont', item['fontname'])
         item['font'].addObserver(self, 'includedFontChangedEvent', 'Font.Changed')
         
         self.openedFonts.append(item['font'])
 
-    def __new__testit__delOpenedFont(self, rowIndex):
+    def delOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        assert not item["font"], "WARNING font is NoneType, cannot delete"
+        assert item['font'].hasInterface(), "WARNING font is already closed, cannot delete"
         item["font"].removeObserver(self, 'Font.Changed')
         print('!!!>>>>>> delOpenedFont', item['fontname'])
         self.openedFonts.remove(item['font'])
-        # del item["openedFont"]
-
-    def getOpenedFont(self, rowIndex):
-        item = self.fontMasters[rowIndex]
-        font = item.get("openedFont")
-        return font
-
-    def setOpenedFont(self, rowIndex):
-        item = self.fontMasters[rowIndex]
-        assert item.get("openedFont") is None, "WARNING font was already opened"
-        item["openedFont"] = OpenFont(item["path"])
-        print('!!!>>>>>> setOpenedFont', item['fontname'])
-        item["openedFont"].addObserver(self, 'includedFontChangedEvent', 'Font.Changed')
-        
-        self.openedFonts.append(item['openedFont'])
-
-
-    def delOpenedFont(self, rowIndex):
-        item = self.fontMasters[rowIndex]
-        assert item.get("openedFont") is not None, "WARNING font is NoneType, cannot delete"
-        item["openedFont"].removeObserver(self, 'Font.Changed')
-        print('!!!>>>>>> delOpenedFont', item['fontname'])
-        self.openedFonts.remove(item['openedFont'])
-        del item["openedFont"]
     
     def __del__(self):
         if len(self.openedFonts) > 0:
