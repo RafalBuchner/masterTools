@@ -19,9 +19,10 @@ class ProblemSolvingTools(MTFloatingDialog, BaseWindowController):
     txtH = 17
     btnH = 24
     padding = 10
-    def __init__(self, designspace):
+    def __init__(self, designspace, toolBtn):
         self.designspace = designspace
         self.isActive = False
+        self.toolBtn = toolBtn
 
     def start(self):
         self.initUI()
@@ -29,9 +30,13 @@ class ProblemSolvingTools(MTFloatingDialog, BaseWindowController):
         self.addObeservers()
         self.isActive = True
 
+        self.w.bind('close', self.closeWindow)
+
+
     def finish(self):
         if hasattr(self, "w"):
-            self.w.close()
+            if self.w._window is not None:
+                self.w.close()
         self.removeObservers()
         self.isActive = False
 
@@ -56,10 +61,16 @@ class ProblemSolvingTools(MTFloatingDialog, BaseWindowController):
         closable=True,
         noTitleBar=True)
 
-
-    def closeUI(self):
+    def closeWindow(self, info):
         # binding to window
-        self.finish()
+        self.removeObservers()
+        self.isActive = False
+        # resetting toolbar button status, when window is closed
+        buttonObject = self.toolBtn.getNSButton()
+        self.toolBtn.status = False
+        buttonObject.setBordered_(False)
+
+    
     # RF observers
 
     # code goes here

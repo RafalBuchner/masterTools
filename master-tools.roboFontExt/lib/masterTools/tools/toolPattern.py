@@ -1,7 +1,11 @@
 class ToolName(object):
-    def __init__(self, designspace):
+    def __init__(self, designspace, toolBtn=None):
         self.designspace = designspace
         self.isActive = False
+        
+        if toolBtn is not None:
+            self.toolBtn = toolBtn
+
 
 
     def start(self):
@@ -11,9 +15,9 @@ class ToolName(object):
         self.isActive = True
 
     def finish(self):
-        if hasattr(self, "window"):
-            self.window.close()
-        # code goes here (if tool has a UI, you should add here self.window.close() )
+        if hasattr(self, "w"):
+            if self.w._window is not None:
+                self.w.close()
         self.removeObservers()
         self.isActive = False
 
@@ -26,9 +30,15 @@ class ToolName(object):
     def initUI(self):
         pass
 
-    def closeUI(self):
+    def closeWindow(self, info):
         # binding to window
-        self.finish()
+        self.removeObservers()
+        self.isActive = False
+        # resetting toolbar button status, when window is closed
+        buttonObject = self.toolBtn.getNSButton()
+        self.toolBtn.status = False
+        buttonObject.setBordered_(False)
+
     # RF observers
 
     # code goes here

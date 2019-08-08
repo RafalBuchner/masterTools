@@ -23,13 +23,10 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
     btnH = 24
     padding = 10
 
-    def __init__(self, designspace):
+    def __init__(self, designspace, toolBtn):
         self.designspace = designspace
         self.isActive = False
-
-
-
-
+        self.toolBtn = toolBtn
 
     def start(self):
         self.auditList = {}
@@ -37,10 +34,12 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         self.w.open()
         self.addObeservers()
         self.isActive = True
+        self.w.bind('close', self.closeWindow)
 
     def finish(self):
         if hasattr(self, "w"):
-            self.w.close()
+            if self.w._window is not None:
+                self.w.close()
         self.removeObservers()
         self.isActive = False
 
@@ -83,8 +82,14 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
             self.createAuditForLetter(testAudit, "a", 0)
         self.refreshAudit()
 
-
-
+    def closeWindow(self, info):
+        # binding to window
+        self.removeObservers()
+        self.isActive = False
+        # resetting toolbar button status, when window is closed
+        buttonObject = self.toolBtn.getNSButton()
+        self.toolBtn.status = False
+        buttonObject.setBordered_(False)
 
     def createAuditForLetter(self, auditList, letterName, rowIndex):
         def _btnCallback(sender):
@@ -133,12 +138,8 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
             view = self.auditList[glyphName]
             setattr(self.w, glyphName+"_obj", view )
 
+    
 
-
-
-    def closeUI(self):
-        # binding to window
-        self.finish()
     # RF observers
 
     # code goes here

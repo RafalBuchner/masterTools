@@ -360,7 +360,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         # checkbox functionality of btn in Tools Group
         if sender.status:
             if self.problemSolvingTools is None:
-                self.problemSolvingTools = ProblemSolvingTools(self.designspace)
+                self.problemSolvingTools = ProblemSolvingTools(self.designspace, toolBtn=sender)
             self.problemSolvingTools.start()
             self.toolObjects += [self.problemSolvingTools]
         else:
@@ -370,7 +370,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         # checkbox functionality of btn in Tools Group
         if sender.status:
             if self.incompatibleGlyphsBrowserTool is None:
-                self.incompatibleGlyphsBrowserTool = IncompatibleGlyphsBrowser(self.designspace)
+                self.incompatibleGlyphsBrowserTool = IncompatibleGlyphsBrowser(self.designspace, toolBtn=sender)
             self.incompatibleGlyphsBrowserTool.start()
             self.toolObjects += [self.incompatibleGlyphsBrowserTool]
         else:
@@ -390,7 +390,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         # checkbox functionality of btn in Tools Group
         if sender.status:
             if self.compatibilityTableTool is None:
-                self.compatibilityTableTool = CompatibilityTableWindow(self.designspace)
+                self.compatibilityTableTool = CompatibilityTableWindow(self.designspace, toolBtn=sender)
             self.compatibilityTableTool.start()
             self.toolObjects += [self.compatibilityTableTool]
 
