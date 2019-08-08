@@ -250,20 +250,22 @@ class MTGlyphPreview(Box):
     def _getInterpolation(self,name,loc):
         instanceDescriptor = InstanceDescriptor()
         instanceDescriptor.location = loc
-
-        glyphMutator = self.designspace.getGlyphMutator(name, decomposeComponents=True)
-        glyphMath = glyphMutator.makeInstance(instanceDescriptor.location, bend=True)
-        glyph = RGlyph().naked()
-        iterGlyph = glyphMath.extractGlyph(glyph, glyph.getPointPen(), onlyGeometry=True)
-        if iterGlyph is not None:
-            glyph = RGlyph()
-            pen = glyph.getPen()
-            iterGlyph.draw(pen)
-            glyph.moveBy((-glyphMath.width/2,-20))
-            glyph.transformBy((.4, 0, 0, .4, 0, 0))
-            return glyph
-        else:
-            return glyph
+        try:
+            glyphMutator = self.designspace.getGlyphMutator(name, decomposeComponents=True)
+            glyphMath = glyphMutator.makeInstance(instanceDescriptor.location, bend=True)
+            glyph = RGlyph().naked()
+            iterGlyph = glyphMath.extractGlyph(glyph, glyph.getPointPen(), onlyGeometry=True)
+            if iterGlyph is not None:
+                glyph = RGlyph()
+                pen = glyph.getPen()
+                iterGlyph.draw(pen)
+                glyph.moveBy((-glyphMath.width/2,-20))
+                glyph.transformBy((.4, 0, 0, .4, 0, 0))
+                return glyph
+            else:
+                return glyph
+        except:
+            print(name, "doesn't interpolate")
 
 
     def mainWindowClose(self):
