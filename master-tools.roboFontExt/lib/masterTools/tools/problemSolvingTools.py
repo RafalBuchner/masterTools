@@ -53,7 +53,7 @@ class ProblemSolvingTools(MTFloatingDialog, BaseWindowController):
         x, y, p = self.padding, self.padding, self.padding
 
         self.w = self.window(self.winMinSize,
-        "Problem Solving Tools       ",
+        "Problem Solving Tools",
         minSize=self.winMinSize,
         maxSize=self.winMaxSize,
         autosaveName=self.id,
