@@ -111,7 +111,6 @@ class MTInteractiveSBox(NSBox):
             return self.rightMenu
 
     def mouseDragged_(self,event):
-        # # print(event)
         windowView = self.window().contentView()
         origin = self.convertPoint_toView_(self.frameOrigin(), windowView)
         w,h = (self.frameSize().width,self.frameSize().height)
@@ -129,7 +128,6 @@ class MTInteractiveSBox(NSBox):
 class MTPanel(NSPanel):
     count = 0
     def mouseDragged_(self,event):
-        # # print(event)
         origin = self.frameOrigin()
         w,h = (self.frame().size.width,self.frame().size.height)
         point = event.locationInWindow()

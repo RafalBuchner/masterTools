@@ -159,7 +159,7 @@ class Settings(object):
         if trueFalse == 1:
             value = True
         self.__dict[sender.id] = value
-        # print(self.__dict)
+
 
 
 

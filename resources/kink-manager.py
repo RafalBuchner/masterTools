@@ -56,9 +56,6 @@ class KinksManager(BaseWindowController):
         removeObserver(self,"draw")
         self.g.removeObserver(self,"Glyph.Changed")
 
-
-        print(">>>>>>>>>>>>>>>\n>>Observers removed\n\n\n\n\n\n\n\n")
-
     def windowCloseCallback(self, sender):
         # this receives a notification whenever the window is closed
         # remove the observers
@@ -171,7 +168,6 @@ class KinksManager(BaseWindowController):
                 strokeWidth(3*scale)
                 stroke(*color)
 
-                # print round(ratioIn,accuracyRatio), round(ratioInBP,accuracyRatio)
 
                 save()
                 translate(x,y)

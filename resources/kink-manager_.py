@@ -61,9 +61,6 @@ class KinksManager(BaseWindowController):
         removeObserver(self,"draw")
         self.g.removeObserver(self,"Glyph.Changed")
 
-
-        print(">>>>>>>>>>>>>>>\n>>Observers removed\n\n\n\n\n\n\n\n")
-
     def windowCloseCallback(self, sender):
         # this receives a notification whenever the window is closed
         # remove the observers
@@ -152,35 +149,28 @@ class KinksManager(BaseWindowController):
                             pSel = p
 
                             if p_i+1 > len(points)-1:
-                                print(">>>>>>>>>> 1")
                                 i_one = -1
                             else:
-                                print(">>>>>>>>>> 2")
                                 i_one = p_i + 1
 
                             if p_i+2 > len(points)-1:
-                                print(">>>>>>>>>> 3")
                                 nearer = -1
                                 middle = 0
                                 further = 1
                             else:
-                                print(">>>>>>>>>> 4")
                                 i_two = p_i + 2
 
                             if points[i_one].type == "offcurve" and pSel.type == "offcurve" and points[i_one] != pSel:
-                                print(">>>>>>>>>> 5")
                                 nearer = p_i-2
                                 middle = p_i-1
                                 further = p_i
 
                             elif (points[i_one].type == "curve" or points[i_one].type == "line") and pSel.type == "offcurve":
-                                print(">>>>>>>>>> 6")
                                 nearer = p_i
                                 middle = i_one
                                 further = i_two
 
                             elif pSel.type == "line" or pSel.type == "curve":
-                                print(">>>>>>>>>> 7")
                                 nearer = p_i-1
                                 middle = p_i
                                 further = i_one

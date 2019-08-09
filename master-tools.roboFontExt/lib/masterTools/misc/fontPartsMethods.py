@@ -7,7 +7,6 @@ def calculateSelection(g):
     for c in g:
         lastSelected = None
         if c.points[-3].selected and c.points[0].selected and c.points[0].type == "curve":
-            # print("add+2 a")
             selectedPoints += 2
             lastSelected=c.points[-3]
 
@@ -24,34 +23,27 @@ def calculateSelection(g):
                 if lastSelected is not None:
                     if lastSelected == c.points[i-3] and p.type == "curve" and i != 0:
                         # add selected handle points
-                        # print("add+2 b")
                         selectedPoints += 2
 
                 else:
                     # if the first selected point has outer handle, add 1
                     if c.points[i-1].type == "offcurve" and p.type != "offcurve":
-                        # print("add+1 c")
                         selectedPoints += 1
 
                 # if the last selected point has outer handle, add 1
                 if i+3 < len(c.points):
                     if not c.points[i+3].selected and c.points[i+3].type == "curve":
-                        # print("add+1 d")
                         selectedPoints += 1
                 if i+3 == len(c.points):
                     if not c.points[0].selected and c.points[0].type == "curve":
-                        # print("add+1 e")
                         selectedPoints += 1
                 if i+2 == len(c.points):
                     if not c.points[1].selected and c.points[1].type == "curve":
-                        # print("add+1 f")
                         selectedPoints += 1
                 if i+1 == len(c.points):
                     if not c.points[2].selected and c.points[2].type == "curve":
-                        # print("add+1 g")
                         selectedPoints += 1
 
-                # print("add+1 h")
                 selectedPoints += 1
                 lastSelected = p
 

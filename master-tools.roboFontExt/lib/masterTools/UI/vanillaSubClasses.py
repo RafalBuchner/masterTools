@@ -30,7 +30,6 @@ class MTGlyphPreview(Box):
     check = "•"
     roundLocations = True
     def __init__(self, posSize, title=None):
-        # print("MTGlyphPreview-22.04.19 A")
         super(MTGlyphPreview, self).__init__(posSize, title=title)
         self.glyphName = None
         self.rightClickGroup = []
