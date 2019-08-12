@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 ######################################################
 ######################################################
 # testing:
-DEVELOP = True
+
 if __name__=='__main__':
     import sys,os
     from AppKit import NSApp, NSMenu, NSMenuItem
@@ -39,15 +39,9 @@ from masterTools.misc.masterSwitcher import *
 # from masterTools.misc.MTMath import *
 from masterTools.tools.masterCompatibilityTable import *
 
-def copy2clip(txt):
-    from AppKit import NSPasteboard, NSStringPboardType
-    pb = NSPasteboard.generalPasteboard()
-    pb.declareTypes_owner_([NSStringPboardType],None)
-    pb.setString_forType_(txt,NSStringPboardType)
 
-def getDev():
-    return DEVELOP
-__all__ = [ "copy2clip", "getDev", ]
+
+# __all__ = [ "copy2clip", "getDev", ]
 ####
 
 

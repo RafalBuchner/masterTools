@@ -4,10 +4,10 @@ from masterTools.misc.masterSwitcher import switchMasterTo
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
 from masterTools.UI.vanillaSubClasses import MTList, MTDialog, MTGlyphPreview
-from masterTools.UI.settings import Settings
+from masterTools.UI.settings import Settings#, getGlyphColor_forCurrentMode
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from defconAppKit.windows.baseWindow import BaseWindowController
-from masterTools import copy2clip, getDev
+from masterTools.misc import getDev, copy2clip
 from mojo.extensions import ExtensionBundle
 import AppKit, os
 from mojo.events import addObserver, removeObserver, publishEvent
@@ -41,6 +41,7 @@ settings_icon    = bundle.getResourceImage("settings-icon", ext='pdf')
 closeIcon        = bundle.getResourceImage("close-icon", ext='pdf')
 closed_font_icon = bundle.getResourceImage("closed-font-icon", ext='pdf')
 opened_font_icon = bundle.getResourceImage("opened-font-icon", ext='pdf')
+empty_glyph_cell_100x100 = bundle.getResourceImage("empty-glyph-cell-100x100", ext='pdf')
 setTemplateImages(
                     table_icon, drop_icon, drop_hover_icon, kink_icon,
                     glyphs_icon, problem_icon, settings_icon, closeIcon,
@@ -507,31 +508,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         items = []
 
         for item in designSpaceMasters:
-            glyphColor = AppKit.NSColor.secondaryLabelColor()
-            if osVersionCurrent >= osVersion10_14 and self.uiSettings["darkMode"]:
-                # maybe shitty way, but works…
-                glyphColor = AppKit.NSColor.whiteColor()
-            glyphcell = None
-            # system for finding representation glyph in the master list
-            if self.glyphExampleName in item["font"].keys():
-                glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
-
-            elif self.glyphExampleName[0].upper() + self.glyphExampleName[1:] in item["font"].keys() and glyphcell is None:
-                glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName[0].upper() + self.glyphExampleName[1:]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
-
-            elif self.glyphExampleName[0].lower() + self.glyphExampleName[1:] in item["font"].keys() and glyphcell is None:
-                glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName[0].lower() + self.glyphExampleName[1:]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
-            else:
-                if len(item["font"].keys()) > 0  and glyphcell is None:
-                    font = item["font"]
-                    glyphWithContoursFound = False
-                    for glyph in font:
-                        if len(glyph) > 0:
-                            glyphWithContoursFound = True
-                            glyphcell = GlyphCellFactory(glyph, 100, 100,glyphColor=glyphColor,bufferPercent=.01)
-                            break
-                    if not glyphWithContoursFound:
-                        glyphcell = GlyphCellFactory(font[font.keys()[0]], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+            glyphcell = self.uiSettingsControler.getGlyphCellPreview_inFont(item['font'])
 
             if glyphcell is not None:
                 item["glyphExample"] = glyphcell
@@ -539,13 +516,6 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             if item["font"].path in [font.path for font in AllFonts()]:
                 item["openedImage"] = opened_font_icon
                 item["opened"] = True
-
-                #### 9.08.2019
-                # # opening robofont object, to be able to show it in the RF intergace
-                # for font in AllFonts():
-                #     if font.path == item["font"].path:
-                #         item["robofont.font"] = font
-                #         break
             else:
                 item["openedImage"] = closed_font_icon
                 item["opened"] = False

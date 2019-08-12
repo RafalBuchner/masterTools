@@ -2,9 +2,7 @@ from AppKit import NSColor, NSGraphicsContext, NSForegroundColorAttributeName, N
     NSFontAttributeName, NSAffineTransform, NSRectFill, NSRectFillListUsingOperation, NSImage, NSParagraphStyleAttributeName, \
     NSBezierPath, NSMutableParagraphStyle, NSCenterTextAlignment, NSLineBreakByTruncatingMiddle, NSCompositeSourceOver
 
-if __name__ != "__main__":
-    from masterTools.UI.settings import Settings
-    uiSettings = Settings().getDict()
+
 
 GlyphCellHeaderHeight = 14
 GlyphCellMinHeightForHeader = 40
@@ -209,12 +207,14 @@ class GlyphCellFactoryDrawingController(object):
 if __name__=="__main__":
 
     from vanilla import *
-
+    from masterTools.UI.settings import Settings
+    uiSettings = Settings().getDict()
 
     class ListDemo(object):
         def __init__(self):
-            path = '/Users/rafalbuchner/Dropbox/tests/Book-Rafal-03.ufo'
-            # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
+            # path = '/Users/rafalbuchner/Dropbox/tests/Book-Rafal-03.ufo'
+            path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
+            path = '/Users/rafaelbuchner/Downloads/Anaheim/new/Anaheim-Regular BB17.ufo'
             font = OpenFont(path, False)
             fontListColumnDescriptions = [
                 dict(title="glyph",cell=ImageListCell(), width=220)

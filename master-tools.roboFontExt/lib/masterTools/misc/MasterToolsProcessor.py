@@ -121,7 +121,7 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     # observers
     def includedFontChangedEvent(self, notification):
-        changedOpenedFont = notification.object
+        changedOpenedFont = RFont(notification.object)
         for item in self.fontMasters:
             if item['font'].path == changedOpenedFont.path:
                 item['font'] = changedOpenedFont

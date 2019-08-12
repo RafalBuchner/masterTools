@@ -1,4 +1,5 @@
 # coding: utf-8
+from pprint import pprint
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor # for testing
 from defconAppKit.windows.baseWindow import BaseWindowController
 from masterTools.UI.settings import Settings
@@ -8,9 +9,22 @@ from vanilla import *
 from mojo.events import addObserver, removeObserver
 from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
-from mojo.roboFont import AllFonts, RGlyph, CurrentGlyph
-# from masterTools.UI.glyphCellFactory import GlyphCellFactory
-# glyphcell = GlyphCellFactory(item["font"][self.glyphExampleName], 100, 100,glyphColor=glyphColor,bufferPercent=.01)
+from mojo.roboFont import AllFonts, RGlyph, CurrentGlyph, RContour
+from masterTools.UI.glyphCellFactory import GlyphCellFactory
+from masterTools.misc import getDev
+from mojo.extensions import ExtensionBundle
+
+if getDev():
+    import sys, os
+    currpath = os.path.join( os.path.dirname( __file__ ), '../..' )
+    sys.path.append(currpath)
+    sys.path = list(set(sys.path))
+    pathForBundle = os.path.abspath(os.path.join(__file__ ,"../../../.."))
+    resourcePathForBundle = os.path.join(pathForBundle, "resources")
+    bundle = ExtensionBundle(path=pathForBundle, resourcesName=resourcePathForBundle)
+else:
+    bundle = ExtensionBundle("master-tools")
+table_icon_30x30 = bundle.getResourceImage("table-icon-30x30", ext='pdf')
 
 key = "com.rafalbuchner.MasterTools.MasterCompatibilityTable"
 
@@ -21,6 +35,7 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
     txtH = 17
     btnH = 24
     padding = 10
+    headerHeight = 40
 
     def __init__(self, designspace, toolBtn):
         self.designspace = designspace
@@ -34,8 +49,8 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
     # UI
     def initUI(self):
         # init settings
-        self.uiSettingsControler = Settings()
-        self.uiSettings = self.uiSettingsControler.getDict()
+        
+
         x,y,p = self.padding, self.padding, self.padding
         self.view = Group((10, 0, -10, -0))
         self.infoGroup = Group((0, y, -0, -p))
@@ -63,6 +78,7 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                                           self.items,
                                           columnDescriptions=self.fontsDescriptor,
                                           transparentBackground=True,
+                                          headerHeight=self.headerHeight,
                                           allowSelection=False
                                           )
         # this splitView will help user to control width of the table
@@ -94,6 +110,8 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
     ### mastertools template actions:
     def start(self):
         if CurrentGlyph() != None: self.glyph = CurrentGlyph()
+        self.uiSettingsControler = Settings()
+        self.uiSettings = self.uiSettingsControler.getDict()
         self.updateFonts(None)
         self.updateItems()
         self.initUI()
@@ -144,6 +162,7 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                               self.items,
                               columnDescriptions=self.fontsDescriptor,
                               transparentBackground=True,
+                              headerHeight=self.headerHeight,
                               allowSelection=False
                                )
         # this splitView will help user to control width of the table
@@ -172,11 +191,15 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
         self.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
 
     def updateFonts(self, sender):
+        size = self.headerHeight
+        maxsize = size * 50
+        width = round(int(size*1.5))
+        contourWidth = size*4
         if sender is not None:
             self.designspace = sender['designspace']
         x,y,p=(self.padding for i in range(3))
         self.fonts = []
-        self.fontsDescriptor = [{"title": "contours"}]
+        self.fontsDescriptor = [{'title': 'contours',"alignment":"center",'image':table_icon_30x30}]
 
         for item in self.designspace.includedFonts:
             opened = item.get("openedFont")
@@ -185,7 +208,15 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                 self.fonts += [(fontName, item["font"])] # (fontname, font)
             else:
                 self.fonts += [(fontName, opened)] # (fontname, font)
-            self.fontsDescriptor += [{"title": fontName,"alignment":"right","truncateFromStart":True}]
+            # size of the cell will be determined by font's unitsPerEm
+            bufferPercent = (item['font'].info.unitsPerEm / 1000) *.001
+            bufferPercent = .1
+            glyphcell = self.uiSettingsControler.getGlyphCellPreview_inFont(item['font'], size=(width, size*.75))
+            if glyphcell is None:
+                size = None
+                maxsize = None
+
+            self.fontsDescriptor += [{"title": fontName,"alignment":"center","truncateFromStart":True, 'image':glyphcell,'minWidth':width,'width':width}]
 
         if sender != None:
             del self.tableContainer
@@ -195,12 +226,14 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                               self.items,
                               columnDescriptions=self.fontsDescriptor,
                               transparentBackground=True,
-                              allowSelection=False
+                              allowSelection=False,
+                              headerHeight=self.headerHeight,
                                    )
             self.makeSplitView()
 
     # table actions
     def updateItems(self):
+        self.items = []
         if self.glyph != None:
             gName = self.glyph.name
             fontName = ""
@@ -211,7 +244,6 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
             numberSelectedOfPoints = calculateSelection(self.glyph)
             self.info = {"master": fontName,"name": gName,"contours": len(self.glyph),"points":numberOfPoints, "selected":numberSelectedOfPoints}
 
-            self.items = []
             contours = []
             components = []
             table = []
@@ -219,6 +251,7 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
             maxNumOfContours = 0
             maxNumOfComponents = 0
             for masterName, font in self.fonts:
+                print(font.__class__.__name__)
                 if gName in font.keys():
                     glyph = font[gName]
                     columns[masterName] = []
@@ -237,7 +270,6 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                 else:
                     columns[masterName] = ["!NO GLYPH!"]*17
                     pass
-
 
             for i in range(maxNumOfContours-1,-1,-1):
                 row = {}
@@ -275,9 +307,7 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
 
             self.items = list(reversed(contours)) + list(reversed(components))
 
-        else:
-            self.items = []
-
+        pprint(self.items)
         self.updateErrorHighlighting()
 
     def updateErrorHighlighting(self):

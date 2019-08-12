@@ -695,6 +695,7 @@ class MTList(List):
 
             title = data["title"]
             image = data.get("image")
+            headerToolTip = data.get("headerToolTip")
             key = data.get("key", title)
             width = data.get("width")
             minWidth = data.get("minWidth", width)
@@ -721,12 +722,12 @@ class MTList(List):
             if transparentBackground:
                 myHeaderCell = TransparentNSTableHeaderCell.alloc().init()
                 column.setHeaderCell_(myHeaderCell)
-            if headerHeight is not None:
-                print('ResizedNSTableHeaderCell 1')
+            if headerHeight is not None and transparentBackground is False:
+                # print('ResizedNSTableHeaderCell 1')
                 myHeaderCell = ResizedNSTableHeaderCell.alloc().init()
-                print('ResizedNSTableHeaderCell 2')
+                # print('ResizedNSTableHeaderCell 2')
                 column.setHeaderCell_(myHeaderCell)
-                print('ResizedNSTableHeaderCell 3')
+                # print('ResizedNSTableHeaderCell 3')
             # # #####TEST
             self._orderedColumnIdentifiers.append(key)
             # set the width resizing mask
@@ -821,10 +822,14 @@ class MTList(List):
                     column.setWidth_(width)
                     column.setMinWidth_(minWidth)
                     column.setMaxWidth_(maxWidth)
-            print(data, columnDescriptions)
+            # print(f'column {columnIndex}', data)
             if image is not None:
-                print(image)
+                # print(image)
                 column.headerCell().setImage_(image)
+                if headerToolTip is None:
+                    column.setHeaderToolTip_(title)
+            if headerToolTip is not None:
+                column.setHeaderToolTip_(headerToolTip)
 
         # force the columns to adjust their widths if possible. (needed in 10.10)
         if mainWindow is not None:
