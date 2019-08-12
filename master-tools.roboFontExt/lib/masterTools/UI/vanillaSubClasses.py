@@ -694,6 +694,7 @@ class MTList(List):
         for columnIndex, data in enumerate(columnDescriptions):
 
             title = data["title"]
+            image = data.get("image")
             key = data.get("key", title)
             width = data.get("width")
             minWidth = data.get("minWidth", width)
@@ -741,6 +742,7 @@ class MTList(List):
 
             column.headerCell().setTitle_(title)
             # setting custom font
+            
 
             if font is not None and self._tableView.headerView() is not None:
                 column.headerCell().setFont_(font)
@@ -819,6 +821,10 @@ class MTList(List):
                     column.setWidth_(width)
                     column.setMinWidth_(minWidth)
                     column.setMaxWidth_(maxWidth)
+            print(data, columnDescriptions)
+            if image is not None:
+                print(image)
+                column.headerCell().setImage_(image)
 
         # force the columns to adjust their widths if possible. (needed in 10.10)
         if mainWindow is not None:

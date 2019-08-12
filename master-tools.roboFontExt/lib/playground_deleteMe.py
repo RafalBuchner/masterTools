@@ -24,7 +24,11 @@ opened_font_icon = bundle.getResourceImage("opened-font-icon", ext='pdf')
 class ListDemo(object):
     def __init__(self):
 
-        columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12)},{"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},{"title": "Three","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},{"title": "Four","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},]
+        path = '/Users/rafaelbuchner/Downloads/Anaheim/new/Anaheim-Regular BB17.ufo'
+        # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
+        font = OpenFont(path, False)
+        glyph=GlyphCellFactory(font['g'], 50,   50, glyphColor=NSColor.blackColor())
+        columnDescriptions = [{"title": "One","font":NSFont.systemFontOfSize_(12),'image':glyph},{"title": "Two","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},{"title": "Three","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},{"title": "Four","textColor":((0,1,0,1)),"font":("AndaleMono",12),"alignment":"right"},]
 
         self.w = FloatingWindow((400, 700), minSize=(100,100))
         self.w.list = MTList(
@@ -36,15 +40,11 @@ class ListDemo(object):
                         headerHeight=50
                         # transparentBackground=True
         )
-        tv = self.w.list.getNSTableView()
+        # tv = self.w.list.getNSTableView()
 
-        path = '/Users/rafaelbuchner/Downloads/Anaheim/new/Anaheim-Regular BB17.ufo'
-        # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
-        font = OpenFont(path, False)
-        glyph=GlyphCellFactory(font['g'], 50,   50, glyphColor=NSColor.blackColor())
-        c1,c2,c3,c4 = tv.tableColumns()
-        c2.headerCell().setImage_(glyph)
-        # help(c1.headerCell())
+        # c1,c2,c3,c4 = tv.tableColumns()
+        # c2.headerCell().setImage_(glyph)
+        # # help(c1.headerCell())
         
         self.w.open()
 
