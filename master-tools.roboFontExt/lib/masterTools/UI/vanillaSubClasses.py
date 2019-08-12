@@ -533,6 +533,7 @@ class MTList(List):
                 dragSettings=None,
                 mainWindow=None,
                 font=None,
+                headerHeight=None,
                 ):
         if items is not None and dataSource is not None:
             raise VanillaError("can't pass both items and dataSource arguments")
@@ -572,6 +573,9 @@ class MTList(List):
         if not showColumnTitles or not columnDescriptions:
             self._tableView.setHeaderView_(None)
             self._tableView.setCornerView_(None)
+        if headerHeight is not None:
+            header = AppKit.NSTableHeaderView.alloc().initWithFrame_(AppKit.NSMakeRect(0,0,0, headerHeight))
+            self._tableView.setHeaderView_(header)
         # set the table attributes
         self._tableView.setUsesAlternatingRowBackgroundColors_(False)
         #if not drawFocusRing:
@@ -595,7 +599,7 @@ class MTList(List):
             self._makeColumnWithoutColumnDescriptions()
             self._itemsWereDict = False
         else:
-            self._makeColumnsWithColumnDescriptions(columnDescriptions, mainWindow, drawBorders, transparentBackground, font, widthIsHeader)
+            self._makeColumnsWithColumnDescriptions(columnDescriptions, mainWindow, drawBorders, transparentBackground, font, widthIsHeader, headerHeight)
             self._itemsWereDict = True
         # set some typing sensitivity data
         self._typingSensitive = enableTypingSensitivity
@@ -681,7 +685,7 @@ class MTList(List):
         # self._tableView.setColumnAutoresizingStyle_(AppKit.NSTableViewLastColumnOnlyAutoresizingStyle)
         self._tableView.setColumnAutoresizingStyle_(AppKit.NSTableViewUniformColumnAutoresizingStyle)
 
-    def _makeColumnsWithColumnDescriptions(self, columnDescriptions, mainWindow, drawBorders, transparentBackground, font, widthIsHeader):
+    def _makeColumnsWithColumnDescriptions(self, columnDescriptions, mainWindow, drawBorders, transparentBackground, font, widthIsHeader, headerHeight):
         # make sure that the column widths are in the correct format.
         self._handleColumnWidths(columnDescriptions)
         # create each column.
@@ -716,6 +720,12 @@ class MTList(List):
             if transparentBackground:
                 myHeaderCell = TransparentNSTableHeaderCell.alloc().init()
                 column.setHeaderCell_(myHeaderCell)
+            if headerHeight is not None:
+                print('ResizedNSTableHeaderCell 1')
+                myHeaderCell = ResizedNSTableHeaderCell.alloc().init()
+                print('ResizedNSTableHeaderCell 2')
+                column.setHeaderCell_(myHeaderCell)
+                print('ResizedNSTableHeaderCell 3')
             # # #####TEST
             self._orderedColumnIdentifiers.append(key)
             # set the width resizing mask
@@ -820,7 +830,7 @@ class MTList(List):
         self._tableView.sizeToFit()
         self.tableWidth = tableWidth
 
-def TMTextBox(posSize, text="", alignment="natural", selectable=False, sizeStyle="regular", fontAttr=None, color=None):
+def MTTextBox(posSize, text="", alignment="natural", selectable=False, sizeStyle="regular", fontAttr=None, color=None):
     txtBox = TextBox(posSize, text, alignment, selectable, sizeStyle)
     if fontAttr is not None:
         if isinstance(fontAttr, tuple):
