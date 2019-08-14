@@ -58,3 +58,37 @@ if __name__ == "__main__":
     ow.show()
     o = OpenWindow(DesignSpaceWindow)
 
+    ### test
+    # from vanilla import *
+    # from random import random
+    # class ListDemo(object):
+
+    #     def __init__(self):
+    #         self.w = Window((500, 300),minSize=(100,100))
+    #         self.w.l = MTList((0, 0, -0, -100),
+    #                      [{"One": "A", "Two": "a", 'Three':'0', 'Four':'0a'}, {"One": "B", "Two": "b", "Three": "1", 'Four':'0a'}, {"One": "C", "Two": "c", "Three": "2", 'Four':'0a'},{"One": "D", "Two": "d", "Three": "3", 'Four':'0a'}],
+    #                      columnDescriptions=[{"title": "One"}, {"title": "Two"}, {'title': 'Three'}, {'title': 'Four'}],
+    #                      rowHeight=20,
+    #                      # highlightDescriptions={(i,j) : (random(),random(),random())  for i in range(9) for j in range(9)}
+    #                      )
+
+            
+            
+    #         self.w.l.setCellHighlighting({
+    #             (i,j) : (random(),random(),random())  for i in range(9) for j in range(9)
+    #             })
+
+    #         t = self.w.l.getNSTableView()
+
+    #         columnIndex = 2
+    #         highlightDescriptions = self.w.l.getHighlightDescriptions()
+    #         for i in range(t.numberOfRows()):
+    #             highlightDescriptions[(columnIndex,i)] = (0,.3,1,.4)
+    #         self.w.l.setCellHighlighting(highlightDescriptions)
+            # self.w.open()
+
+
+        
+
+
+    # ListDemo()

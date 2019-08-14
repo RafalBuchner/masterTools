@@ -9,7 +9,7 @@ from vanilla import *
 from mojo.events import addObserver, removeObserver
 from mojo.canvas import CanvasGroup
 from mojo.UI import AllGlyphWindows
-from mojo.roboFont import AllFonts, RGlyph, CurrentGlyph, RContour
+from mojo.roboFont import AllFonts, RGlyph, CurrentGlyph, RContour, CurrentFont
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from masterTools.misc import getDev
 from mojo.extensions import ExtensionBundle
@@ -112,12 +112,13 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
         if CurrentGlyph() != None: self.glyph = CurrentGlyph()
         self.uiSettingsControler = Settings()
         self.uiSettings = self.uiSettingsControler.getDict()
-        self.updateFonts(None)
-        self.updateItems()
+        self.updateFonts()
+        self.updateItems('start')
         self.initUI()
         self.w.open()
         self.addObservers()
         self.isActive = True
+        self.fontBecameCurrentObserver(dict(font=CurrentFont()))
 
     def finish(self):
         if hasattr(self, "w"):
@@ -128,12 +129,14 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
 
     ### adding/removing observers
     def addObservers(self):
+        addObserver(self, "fontBecameCurrentObserver",  "fontBecameCurrent")
         addObserver(self, "glyphWindowWillOpenObserver",  "glyphWindowWillOpen")
         addObserver(self, "glyphWindowWillCloseObserver", "glyphWindowWillClose")
         addObserver(self, "currentGlyphChangedObserver",  "currentGlyphChanged")
-        addObserver(self, "updateFonts",                  "MT.designspace.fontMastersChanged")
+        addObserver(self, "fontMastersChangedObserver",                  "MT.designspace.fontMastersChanged")
 
     def removeObservers(self):
+        removeObserver(self, "fontBecameCurrent")
         removeObserver(self, "glyphWindowWillOpen")
         removeObserver(self, "glyphWindowWillClose")
         removeObserver(self, "currentGlyphChanged")
@@ -141,18 +144,32 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
 
     ### Observers
 
+    def fontBecameCurrentObserver(self, info):
+        print('xxxxxxxxxx ',info.__class__.__name__)
+        if info['font'] is None:
+            return
+        items = self.tableContainer.list.get()
+        columnIndexes = []
+        for i, item in enumerate(items[0]):
+            if item in info['font'].path:
+                columnIndexes += [i]
+        # highlightDescriptions = self.tableContainer.list.getHighlightDescriptions()
+        highlightDescriptions = {}
+        table = self.tableContainer.list.getNSTableView()
+        for columnIndex in columnIndexes:
+            for i in range(table.numberOfRows()):
+                highlightDescriptions[(columnIndex,i)] = (0,.3,1,.4)
+        self.tableContainer.list.setCellHighlighting(highlightDescriptions)
+
+
     def glyphWindowWillOpenObserver(self, info):
         currGlyph = info.get("glyph")
         if currGlyph is not None:
             self.glyph = currGlyph
 
-        try:
-            self.glyph.addObserver(self, "glyphChangedObserver", "Glyph.Changed")
-            self.updateFonts(None)
-            self.updateItems()
-        except:
-            self.updateFonts(None)
-            self.updateItems()
+
+        self.updateFonts()
+        self.updateItems('glyphWindowWillOpenObserver b')
 
         self.infoGroup.box.currentInfo.set(
                                   [dict(title=title,info=self.info[title]) for title in self.info]
@@ -173,24 +190,22 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
             self.glyph.removeObserver(self, "Glyph.Changed")
 
     def currentGlyphChangedObserver(self, info):
-        if self.glyph != None:
-            self.glyph.removeObserver(self, "Glyph.Changed")
-        self.glyph = info["glyph"]
-        if self.glyph != None:
-            self.glyph.addObserver(self, "glyphChangedObserver", "Glyph.Changed")
-
-        self.updateItems()
-
+        self.glyph = CurrentGlyph()
+        self.updateItems('currentGlyphChangedObserver')
         self.tableContainer.list.set(self.items)
-        self.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
+        if hasattr(self, 'info'):
+            self.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
 
     def glyphChangedObserver(self, sender):
-        self.updateItems()
+        self.updateItems('glyphChangedObserver')
         if hasattr(self.tableContainer, "list"):
             self.tableContainer.list.set(self.items)
         self.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
+    def fontMastersChangedObserver(self, sender):
+        self.updateFonts(sender)
 
-    def updateFonts(self, sender):
+    def updateFonts(self, sender=None):
+        print('updateFonts')
         size = self.headerHeight
         maxsize = size * 50
         width = round(int(size*1.5))
@@ -232,9 +247,11 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
             self.makeSplitView()
 
     # table actions
-    def updateItems(self):
+    def updateItems(self, txt):
+        print(txt)
         self.items = []
         if self.glyph != None:
+            
             gName = self.glyph.name
             fontName = ""
             for masterName,font in self.fonts:
@@ -251,7 +268,6 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
             maxNumOfContours = 0
             maxNumOfComponents = 0
             for masterName, font in self.fonts:
-                print(font.__class__.__name__)
                 if gName in font.keys():
                     glyph = font[gName]
                     columns[masterName] = []
@@ -306,12 +322,13 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                 components += [row]
 
             self.items = list(reversed(contours)) + list(reversed(components))
-
-        pprint(self.items)
-        self.updateErrorHighlighting()
+            # self.updateErrorHighlighting()
+        
 
     def updateErrorHighlighting(self):
         if hasattr(self, "tableContainer"):
+            # highlightDescriptions = self.tableContainer.list.getHighlightDescriptions()
+            highlightDescriptions = {}
             table = self.tableContainer.list.getNSTableView()
             highlightRowIds = []
             highlightColumnIds = []
@@ -326,16 +343,15 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
                         if '!NO GLYPH!' == cellText:
                             highlightColumnIds += [columnId]
 
-            cellDescription = {}
             for rowId in range(len(self.items)):
                 for columnId in range(len(table.tableColumns())):
                     if rowId in highlightRowIds:
-                        cellDescription[(columnId,rowId)] = (1,0,0,.3)
+                        highlightDescriptions[(columnId,rowId)] = (1,0,0,.3)
                     if columnId in highlightColumnIds:
-                        cellDescription[(columnId,rowId)] = (1,0,0.7,.3)
+                        highlightDescriptions[(columnId,rowId)] = (1,0,0.7,.3)
 
 
-            self.tableContainer.list.setCellHighlighting(cellDescription)
+            self.tableContainer.list.setCellHighlighting(highlightDescriptions)
 
     def closeWindow(self, info):
         # binding to window
@@ -345,6 +361,19 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
         buttonObject = self.toolBtn.getNSButton()
         self.toolBtn.status = False
         buttonObject.setBordered_(False)
+
+    @property
+    def glyph(self):
+        return self._glyph
+    @glyph.setter
+    def glyph(self, glyph):
+        if glyph is not None:
+            glyph.removeObserver(self, 'Glyph.Changed') # description
+        self._glyph = glyph
+        if self._glyph is not None:
+            self._glyph.addObserver(self, 'glyphChangedObserver', 'Glyph.Changed') # description
+        return self._glyph
+
 
 
 

@@ -28,7 +28,7 @@ class MTTableDelegate(NSObject):
         if target is not None:
             if colorChange:
                 cell.setDrawsBackground_(True)
-
+                assert len(target) == 3 or len(target) == 4, 'Wrong number of values in tuple (3 or 4)'
                 if len(target) == 3:
                     r,g,b = target
                     target_backgroundColor = NSColor.colorWithCalibratedRed_green_blue_alpha_(r,g,b,1)
@@ -64,7 +64,6 @@ class MTTableViewSubclass(VanillaTableViewSubclass):
         :param info: list(dict(rowId,columnId,backgroundColor))
         :return: None
         """
-
         self._tableCellHighlight = info
 
 class MTSliderAxisMenuItem(NSMenuItem):

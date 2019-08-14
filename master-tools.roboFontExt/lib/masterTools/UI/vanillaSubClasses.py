@@ -520,7 +520,7 @@ class MTList(List):
                 allowsMultipleSelection=True, allowsEmptySelection=True,
                 allowsSorting=True,
                 drawVerticalLines=False, drawHorizontalLines=False,
-                autohidesScrollers=True, drawFocusRing=False, rowHeight=17.0,
+                autohidesScrollers=True, drawFocusRing=False, rowHeight=17,
                 drawBorders=False,
                 allowSelection=True,
                 transparentBackground=False,
@@ -534,9 +534,11 @@ class MTList(List):
                 mainWindow=None,
                 font=None,
                 headerHeight=None,
+                highlightDescriptions={},
                 ):
         if items is not None and dataSource is not None:
             raise VanillaError("can't pass both items and dataSource arguments")
+        self._highlightDescriptions = highlightDescriptions
         self._rowNum = len(items)
         self._posSize = posSize
         self._enableDelete = enableDelete
@@ -580,7 +582,7 @@ class MTList(List):
         self._tableView.setUsesAlternatingRowBackgroundColors_(False)
         #if not drawFocusRing:
         self._tableView.setFocusRingType_(NSFocusRingTypeNone)
-        self._tableView.setRowHeight_(rowHeight)
+        self._tableView.setRowHeight_(rowHeight+2)
         self._tableView.setAllowsEmptySelection_(allowsEmptySelection)
         self._tableView.setAllowsMultipleSelection_(allowsMultipleSelection)
         if drawVerticalLines or drawHorizontalLines:
@@ -601,6 +603,8 @@ class MTList(List):
         else:
             self._makeColumnsWithColumnDescriptions(columnDescriptions, mainWindow, drawBorders, transparentBackground, font, widthIsHeader, headerHeight)
             self._itemsWereDict = True
+            #### TEST
+            self.columnDescriptions_DELETE = columnDescriptions
         # set some typing sensitivity data
         self._typingSensitive = enableTypingSensitivity
         if enableTypingSensitivity:
@@ -659,16 +663,21 @@ class MTList(List):
 
         self._delegate = self.delegateClass.alloc().initWithSelectionPremission_(allowSelection)
         self._tableView.setDelegate_(self._delegate)
+        self._tableView.setIntercellSpacing_( AppKit.NSSize(0,0) )
         if not allowSelection:
             self.setSelection([])
+        self.setCellHighlighting(self._highlightDescriptions)
 
-    def setCellHighlighting(self, cellDescriptions):
+    def getHighlightDescriptions(self):
+        return self._highlightDescriptions
+        
+    def setCellHighlighting(self, highlightDescriptions):
         """
         :param info: {(rowId,columnId)=(rgb||rgba)}
         :return: None
         """
-
-        self._tableView.setTableCellHighlight_(cellDescriptions)
+        self._highlightDescriptions = highlightDescriptions
+        self._tableView.setTableCellHighlight_(highlightDescriptions)
 
     def _handleColumnWidths(self, columnDescriptions):
         # we also use this opportunity to determine if
@@ -855,3 +864,5 @@ def MTTextBox(posSize, text="", alignment="natural", selectable=False, sizeStyle
     return txtBox
 
 
+if __name__ == '__main__':
+    print('main')

@@ -4,6 +4,8 @@
 
 ## master compatibility table (mct)
 
+problem with updating the font/glyph– I'm assuming that masterprocessor is messing with glyph.changed updates, therefore it resets the table's cells highlightings
+
 ## kink manager
 
 # ISSUES
@@ -29,3 +31,8 @@ Traceback (most recent call last):
   File "/Applications/RoboFont.app/Contents/Resources/lib/python3.6/fontParts/fontshell/font.py", line 103, in _get_defaultLayerName
 AttributeError: 'NoneType' object has no attribute 'layers'
 ```
+
+
+Now I'm working on the highlighting in the MCT. I was able to get rid of the white gaps between the cells. Now I'm figuring out how to fix the issue, in which the highlighting resets. I realised that masterprocessor's font update can mess with that. Interesting thing: if I remove any point, number of ran glyph.changed callbacks is different than when I'm adding the point> Also take in the considaration that masterprocessor.font.update can mess with it.
+
+DO WE NEED UPDATE FONTS connected with GLYPH.CHANGED?

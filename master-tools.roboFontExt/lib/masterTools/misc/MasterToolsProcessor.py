@@ -89,6 +89,13 @@ class MasterToolsProcessor(DesignSpaceProcessor):
                 )]
         self._fontsLoaded = True
 
+    def getFontIndexes(self, font):
+        indexes =[]
+        for i,item in enumerate(self.fontMasters):
+            if font.path == item['path']:
+                indexes += [i]
+        return indexes
+
     def getOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
         hasInterface = item['font'].hasInterface
@@ -122,6 +129,7 @@ class MasterToolsProcessor(DesignSpaceProcessor):
     # observers
     def includedFontChangedEvent(self, notification):
         changedOpenedFont = RFont(notification.object)
+        
         for item in self.fontMasters:
             if item['font'].path == changedOpenedFont.path:
                 item['font'] = changedOpenedFont
