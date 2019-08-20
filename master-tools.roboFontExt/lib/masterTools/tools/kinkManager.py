@@ -3,7 +3,7 @@ from vanilla import *
 from defconAppKit.windows.baseWindow import BaseWindowController
 from mojo.events import addObserver, removeObserver
 from mojo.drawingTools import *
-from mojo.roboFont import CurrentGlyph
+from mojo.roboFont import CurrentGlyph, CurrentFont
 import math
 
 import masterTools.misc.countPoints as countPoints
@@ -40,6 +40,7 @@ class KinkManager(object):
         )
         self.glyph = CurrentGlyph()
         self.bPointsInfo = []
+        self.selectedInfo = None
 
         self.glyph.prepareUndo("Show Curvature")
         self.checkInflections()
@@ -111,11 +112,12 @@ class KinkManager(object):
             fill(*color)
 
             restore()
-        if  len(self.bPointsInfo) > 0:
+        # if  len(self.bPointsInfo) > 0:
+        if  self.selectedInfo is not None:
             accuracyAngle = 2 # IMPORTANT, you should make a slider, or combobox
             accuracyRatio = 3
             scale = info['scale']
-            selectedInfo = self.bPointsInfo[0]
+            selectedInfo = self.selectedInfo
             bPoint = selectedInfo[0][1]
             pointIn = selectedInfo[0][0]
             pointOut = selectedInfo[0][2]
@@ -250,7 +252,10 @@ class KinkManager(object):
                                 whole = lenIn+lenOut
                                 ratioIn = lenIn/whole
                                 ratioOut = lenOut/whole
-                                self.bPointsInfo.append(((bpIn,bpAn,bpOut), angle(bpIn,bpOut),(ratioIn,ratioOut)))
+                                info = ((bpIn,bpAn,bpOut), angle(bpIn,bpOut),(ratioIn,ratioOut))
+                                self.bPointsInfo.append(info)
+                                if font == CurrentFont():
+                                    self.selectedInfo = info
 
 
 if __name__ == "__main__":
