@@ -3,7 +3,7 @@ from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
 from masterTools.misc.masterSwitcher import switchMasterTo
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
-from masterTools.UI.vanillaSubClasses import MTList, MTDialog, MTGlyphPreview
+from masterTools.UI.vanillaSubClasses import MTList, MTDialog, MTGlyphPreview, MTButton
 from masterTools.UI.settings import Settings#, getGlyphColor_forCurrentMode
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from defconAppKit.windows.baseWindow import BaseWindowController
@@ -12,7 +12,7 @@ from mojo.extensions import ExtensionBundle
 import AppKit, os
 from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont, RFont, RGlyph
-
+from mojo.UI import GetFile
 from masterTools.tools.masterCompatibilityTable import CompatibilityTableWindow
 from masterTools.tools.kinkManager import KinkManager
 from masterTools.tools.incompatibilityGlyphBrowserTool import IncompatibleGlyphsBrowser
@@ -199,6 +199,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         x,y,p = self.padding
         self.fontPane = Group((0, 0, -0, -0))
         self.fontPane.caption = TextBox((x, y, 150,self.txtH), "masters")
+        self.fontPane.openDesignSpaceButton = MTButton((-110-p, y,110,self.txtH), 'open design space', callback=self.openDesignSpaceCallback)
         y = self.txtH + p   +p
 
         # image for dropping
@@ -452,6 +453,12 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
     # Customization of vanilla objects
     # ---------------------
+
+    def openDesignSpaceCallback(self, sender):
+        path = GetFile(message='choose file', title='open design space file', allowsMultipleSelection=False, fileTypes=['designspace'])
+        if path is None:
+            return
+        self.loadDesignSpaceFile(path)
 
     def dropFontListCallback(self, sender, dropInfo):
         # some cool hovering options ;)

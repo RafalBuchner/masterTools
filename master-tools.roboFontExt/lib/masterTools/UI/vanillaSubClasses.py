@@ -10,7 +10,7 @@ from mojo.glyphPreview import GlyphPreview
 from mojo.roboFont import OpenWindow, RGlyph, CurrentGlyph
 from fontTools.designspaceLib import InstanceDescriptor
 from mojo.UI import MenuBuilder
-from vanilla import Box, HUDFloatingWindow
+from vanilla import Box, HUDFloatingWindow, Button
 from copy import deepcopy
 _textAlignmentMap = {
     "left":AppKit.NSLeftTextAlignment,
@@ -863,6 +863,11 @@ def MTTextBox(posSize, text="", alignment="natural", selectable=False, sizeStyle
 
     return txtBox
 
+def MTButton(posSize, title, callback=None, sizeStyle="mini"):
+    button = Button(posSize, title, callback=callback, sizeStyle=sizeStyle)
+    nsObj = button.getNSButton()
+    nsObj.setBezelStyle_(AppKit.NSRoundRectBezelStyle)
+    return button
 
 if __name__ == '__main__':
     print('main')
