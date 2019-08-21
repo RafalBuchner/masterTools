@@ -12,6 +12,7 @@ from fontTools.designspaceLib import InstanceDescriptor
 from mojo.UI import MenuBuilder
 from vanilla import Box, HUDFloatingWindow, Button
 from copy import deepcopy
+from designspaceProblems.problems import DesignSpaceProblem
 _textAlignmentMap = {
     "left":AppKit.NSLeftTextAlignment,
     "right":AppKit.NSRightTextAlignment,
@@ -868,6 +869,50 @@ def MTButton(posSize, title, callback=None, sizeStyle="mini"):
     nsObj = button.getNSButton()
     nsObj.setBezelStyle_(AppKit.NSRoundRectBezelStyle)
     return button
+
+class MTDesignSpaceLoadingProblem:
+    def __init__(self, path, parentController, foundDSEditor, DSProblemChecker):
+        self.parentController = parentController
+        txtH = 17
+        x,y,p = (10,10,10)
+        loadingissue = MTFloatingWindowWrapper((440, 300),minSize=(440, 300))
+        loadingissue.title = TextBox((x,y,-p,txtH*6),'Error loading design space file.\n\n\nMaster-tool faced following design space problems,\nwhile loading the design space file (some of them are critical):')
+        y += txtH*6 + p
+        _categories = DesignSpaceProblem._categories
+        _problems  =  DesignSpaceProblem._problems
+        problems = [dict(category=_categories[problem.category],problem=_problems[(problem.category,problem.problem)],data=problem.data) for problem in DesignSpaceProblem.problems]
+        columnDescriptions=[{"title": "category","font":AppKit.NSFont.systemFontOfSize_(10),"width":140,"textColor":((1,0,0,1)), 'cell':MTVerticallyCenteredTextFieldCell.alloc().init()}, 
+        {"title": "data","font":("Monaco",10),"alignment":"left",'truncateFromStart':True, 'cell':MTVerticallyCenteredTextFieldCell.alloc().init()},
+        {"title": "problem","font":("Monaco",10),"alignment":"left",'truncateFromStart':True, 'cell':MTVerticallyCenteredTextFieldCell.alloc().init()},
+        ]
+
+
+
+        loadingissue.list = MTList(
+                                (p,y,-p,-txtH-2*p),
+                                problems, rowHeight=30,
+                                transparentBackground=True,
+                                allowsMultipleSelection=False,
+                                columnDescriptions=columnDescriptions)
+        # loadingissue.list.getNSTableView().setSelectionHighlightStyle_(4)
+        lineType =AppKit.NSTableViewSolidHorizontalGridLineMask
+        loadingissue.list.getNSTableView().setGridStyleMask_(lineType)
+
+        loadingissue.cancelBtn = MTButton((x, -txtH-p,200,txtH), 'cancel', callback=self._closeIssueWarning)
+        loadingissue.cancelBtn.parent = loadingissue
+        if foundDSEditor:
+            loadingissue.openDesignSpaceEditorBtn = MTButton((x+200+p, -txtH-p,200,txtH), 'open in design space editor', callback=self._openDSEditor)
+            loadingissue.openDesignSpaceEditorBtn.parent = loadingissue
+            loadingissue.openDesignSpaceEditorBtn.path = path
+            loadingissue.openDesignSpaceEditorBtn.enable(foundDSEditor)
+        loadingissue.open()
+
+    def _closeIssueWarning(self, btn):
+        btn.parent.close()
+
+    def _openDSEditor(self, btn):
+        self.parentController.openDesignSpaceEditorCallback(btn)
+        btn.parent.close()
 
 if __name__ == '__main__':
     print('main')

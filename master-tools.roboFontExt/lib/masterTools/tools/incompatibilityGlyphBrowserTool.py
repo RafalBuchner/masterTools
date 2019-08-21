@@ -1,13 +1,23 @@
 # from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor # for testing
 from mojo.roboFont import CurrentFont # for testing
+from mojo.UI import OpenGlyphWindow # for testing
+from mojo.events import addObserver, removeObserver # for testing
 import AppKit
 from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
 from defconAppKit.windows.baseWindow import BaseWindowController
-from masterTools.UI.vanillaSubClasses import MTList,  MTFloatingDialog
 from masterTools.UI.settings import Settings
+
+from masterTools.UI.vanillaSubClasses import MTList,  MTFloatingDialog
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
+
+from defconAppKit.controls.glyphCollectionView import GlyphCollectionView
+
 from vanilla import *
+from pprint import pprint
+from designspaceProblems import DesignSpaceChecker
+from designspaceProblems.problems import DesignSpaceProblem
+from random import random
 # from mojo.events import addObserver, removeObserver
 # from mojo.canvas import CanvasGroup
 # from mojo.UI import AllGlyphWindows
@@ -25,6 +35,8 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
 
     def __init__(self, designspace, toolBtn):
         self.designspace = designspace
+
+        
         self.isActive = False
         self.toolBtn = toolBtn
 
@@ -32,9 +44,10 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         self.auditList = {}
         self.initUI()
         self.w.open()
-        self.addObeservers()
+        self.addObservers()
         self.isActive = True
         self.w.bind('close', self.closeWindow)
+
 
     def finish(self):
         if hasattr(self, "w"):
@@ -43,20 +56,20 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         self.removeObservers()
         self.isActive = False
 
-    def addObeservers(self):
-        pass
+    def addObservers(self):
+        addObserver(self, 'testIncompaibility', 'fontBecameCurrent')
 
     def removeObservers(self):
-        pass
+        removeObserver(self, 'fontBecameCurrent')
 
     def initUI(self):
+        self.problemChecker = DesignSpaceChecker(self.designspace)
+
+
         self.uiSettingsControler = Settings()
         self.uiSettings = self.uiSettingsControler.getDict()
+        self.glyphColor = self.uiSettingsControler.getGlyphColor_forCurrentMode()
 
-        self.glyphColor = AppKit.NSColor.secondaryLabelColor()
-        if osVersionCurrent >= osVersion10_14 and self.uiSettings["darkMode"]:
-            # maybe shitty way, but works…
-            self.glyphColor = AppKit.NSColor.whiteColor()
 
         x, y, p = self.padding, self.padding, self.padding
 
@@ -69,18 +82,53 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         closable=True,
         noTitleBar=True)
 
-        testAudit = [
+        # view = Group((0,0,-0,-0))
 
-            "incompatible number of anchors",
-            "bad order of the contours",
-            "starting point in bad place",
-            "different number of points",
-            "different number of contours",
-            "different number of components",
-        ]
-        for name in ["a","b","c","d"]:
-            self.createAuditForLetter(testAudit, "a", 0)
-        self.refreshAudit()
+        self.w.foundTxtBox = TextBox((x,y,-p,self.txtH*2),'')
+        self.testIncompaibility()
+        y += self.txtH*2 + p
+        self.w.view = Group((0,y,-0,-0))
+        columnDescriptions = [
+                                dict(title='glyph', cell=ImageListCell()),
+                                # dict(title='problems', cell=MTVerticallyCenteredTextFieldCell.alloc().init()),
+                                dict(title='name', cell=MTVerticallyCenteredTextFieldCell.alloc().init(),width=42), ]
+        self.w.view.glyphs = MTList((0,0,-0,-0),self.items,
+            columnDescriptions=columnDescriptions,
+            rowHeight=45,selectionCallback=self.showPopoverCallback,
+            allowsMultipleSelection=False,
+            showColumnTitles=False,doubleClickCallback=self.doubleClickCallback)
+
+        self.w.open()
+        
+
+    def doubleClickCallback(self, sender):
+        selection = sender.getSelection()[0]
+        glyphName = self.lettersWithIssues[selection]
+        glyph = self.currfont[glyphName]
+        
+        if CurrentFont() is None:
+            for rowIndex,item in enumerate(self.designspace.fontMasters):
+                if item['font'] == glyph.font:
+                    self.designspace.setOpenedFont(rowIndex)
+        OpenGlyphWindow(glyph)
+
+
+    def showPopoverCallback(self, sender):
+        selection = sender.getSelection()
+        x,y,p = [self.padding]*3
+        if not selection:
+            return
+        for i in selection:
+            problems = self.items[i]['problems']
+            height = len(problems.split('\n')) * self.txtH + p*2
+            index = sender.getSelection()[0]
+            relativeRect = sender.getNSTableView().rectOfRow_(index)
+            # relativeRect.origin.y += 22
+            self.pop = Popover((400, height), behavior='transient')
+            self.pop.text = TextBox((x, y, -p, -p), problems)
+            self.pop.open(parentView=sender, preferredEdge='right', relativeRect=relativeRect)
+        
+        
 
     def closeWindow(self, info):
         # binding to window
@@ -91,54 +139,7 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         self.toolBtn.status = False
         buttonObject.setBordered_(False)
 
-    def createAuditForLetter(self, auditList, letterName, rowIndex):
-        def _btnCallback(sender):
-            print(pressedTheButton, sender.glyphName)
-
-        # settubg dimentions
-        minSize = 50
-        x, y, p = self.padding, self.padding, self.padding
-        x += p*2
-        auditHeight = len(auditList) * self.txtH
-        btnPosSize = (x, y, minSize, -p)
-
-        # creating button
-        glyphImage = GlyphCellFactory(CurrentFont()["a"], 100, 100, glyphColor=self.glyphColor, bufferPercent=.01)
-        btn = GradientButton(btnPosSize, imageObject=glyphImage, bordered=False, callback=_btnCallback)
-        btn.glyphName = letterName
-
-        # creating label
-        title = TextBox((x + minSize + p*4, y, -p, self.txtH), "glyph name: " + letterName)
-        y += self.txtH + p / 2
-
-        # creating audit
-        auditTxt = "\n".join(auditList)
-        audit = TextBox((x + minSize + p*5, y, -p, auditHeight), auditTxt, sizeStyle="small")
-        y += p + auditHeight
-        line = HorizontalLine((p,y-1,-p,1))
-        # setting the view and attributes
-        height = y
-        if height < minSize :
-            height = minSize
-
-
-        view = Group((0, 0, -0, height))
-        view.btn = btn
-        view.title = title
-        view.audit = audit
-        view.line = line
-        view.rowHeight = height
-        view.glyphName = letterName
-        view.index = rowIndex
-
-        self.auditList[letterName] = view
-
-    def refreshAudit(self):
-        for glyphName in self.auditList:
-            view = self.auditList[glyphName]
-            setattr(self.w, glyphName+"_obj", view )
-
-    
+  
 
     # RF observers
 
@@ -150,4 +151,59 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
 
     # tool actions
 
-    # code goes here
+    def testIncompaibility(self, sender=None):
+        self.currfont = CurrentFont()
+        if self.currfont is None:
+            self.currfont = self.designspace.fontMasters[0]['font']
+
+        self.problemChecker.ds.loadFonts()
+        self.problemChecker.nf = self.problemChecker.ds.getNeutralFont()
+        self.problemChecker.checkGlyphs()
+        _categories = DesignSpaceProblem._categories
+        _problems  =  DesignSpaceProblem._problems
+        problems = [dict(category=_categories[problem.category],problem=_problems[(problem.category,problem.problem)],data=problem.data) for problem in self.problemChecker.problems]
+        self.glyph_problems = {}
+        for problemDescription in problems:
+            data = problemDescription['data']
+            glyph = data['glyphName']
+            if glyph not in self.glyph_problems.keys():
+                self.glyph_problems[glyph] = []
+            _data = " -> "
+            for dataCategory in data:
+                if dataCategory == 'glyphName':
+                    continue
+                _data += dataCategory+': '+data[dataCategory]
+            if _data == " -> ":
+                _data = ''
+
+            self.glyph_problems[glyph] += ['– '+problemDescription['problem'] + _data]
+
+
+        glyphsOrder = []
+        for fontName, fontObj in self.problemChecker.ds.fonts.items():
+            if fontObj is None:
+                continue
+            for glyphName in fontObj.glyphOrder:
+                if not glyphName in glyphsOrder:
+                    glyphsOrder += [glyphName]
+
+
+        self.lettersWithIssues = []
+        for glyphName in glyphsOrder:
+            if glyphName in self.glyph_problems.keys():
+                self.lettersWithIssues +=[glyphName]
+
+        self.items = []
+        for glyphName in self.lettersWithIssues:
+            data = ""
+
+            self.items += [dict(
+                            glyph=GlyphCellFactory(self.currfont[glyphName], 150, 150, glyphColor=self.glyphColor, bufferPercent=.01),
+                            problems='\n'.join(self.glyph_problems[glyphName]),
+                            name=glyphName,
+                            )]
+        countTxt = f'{len(problems)} problems\n{len(self.lettersWithIssues)} glyphs'
+        self.w.foundTxtBox.set(countTxt)
+
+
+

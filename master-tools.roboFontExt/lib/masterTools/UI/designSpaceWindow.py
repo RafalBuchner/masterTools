@@ -3,7 +3,7 @@ from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
 from masterTools.misc.masterSwitcher import switchMasterTo
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
-from masterTools.UI.vanillaSubClasses import MTList, MTDialog, MTGlyphPreview, MTButton
+from masterTools.UI.vanillaSubClasses import MTList, MTDialog, MTGlyphPreview, MTButton, MTDesignSpaceLoadingProblem
 from masterTools.UI.settings import Settings#, getGlyphColor_forCurrentMode
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from defconAppKit.windows.baseWindow import BaseWindowController
@@ -17,8 +17,13 @@ from masterTools.tools.masterCompatibilityTable import CompatibilityTableWindow
 from masterTools.tools.kinkManager import KinkManager
 from masterTools.tools.incompatibilityGlyphBrowserTool import IncompatibleGlyphsBrowser
 from masterTools.tools.problemSolvingTools import ProblemSolvingTools
-
-
+from designspaceProblems import DesignSpaceChecker
+from pprint import pprint
+import importlib
+designSpaceEditorwindow_loader = importlib.find_loader('designSpaceEditorwindow')
+foundDSEditor = designSpaceEditorwindow_loader is not None
+if foundDSEditor:
+    designSpaceEditorwindow = designSpaceEditorwindow_loader.load_module()
 
 if getDev():
     import sys, os
@@ -454,10 +459,15 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # Customization of vanilla objects
     # ---------------------
 
+    def openDesignSpaceEditorCallback(self, sender):
+        path = sender.path
+        designSpaceEditorwindow.DesignSpaceEditor(path)
+
     def openDesignSpaceCallback(self, sender):
         path = GetFile(message='choose file', title='open design space file', allowsMultipleSelection=False, fileTypes=['designspace'])
         if path is None:
             return
+        
         self.loadDesignSpaceFile(path)
 
     def dropFontListCallback(self, sender, dropInfo):
@@ -481,6 +491,12 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
 
     def loadDesignSpaceFile(self, path):
+        problem = DesignSpaceChecker(path)
+        problem.checkEverything()
+        if problem.hasStructuralProblems():
+            MTDesignSpaceLoadingProblem(path, parentController=self, foundDSEditor=foundDSEditor,DSProblemChecker=problem)
+            return
+
         self.uiSettingsControler.currentDesignspacePath = path
         designSpaceLoaded = self.loadDesignSpace(path)
         lineType =AppKit.NSTableViewSolidHorizontalGridLineMask
