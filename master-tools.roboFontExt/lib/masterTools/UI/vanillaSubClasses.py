@@ -875,15 +875,30 @@ class MTDesignSpaceLoadingProblem:
         self.parentController = parentController
         txtH = 17
         x,y,p = (10,10,10)
-        loadingissue = MTFloatingWindowWrapper((440, 300),minSize=(440, 300))
+        loadingissue = MTFloatingWindowWrapper((550, 300),minSize=(440, 300))
         loadingissue.title = TextBox((x,y,-p,txtH*6),'Error loading design space file.\n\n\nMaster-tool faced following design space problems,\nwhile loading the design space file (some of them are critical):')
         y += txtH*6 + p
         _categories = DesignSpaceProblem._categories
         _problems  =  DesignSpaceProblem._problems
-        problems = [dict(category=_categories[problem.category],problem=_problems[(problem.category,problem.problem)],data=problem.data) for problem in DesignSpaceProblem.problems]
-        columnDescriptions=[{"title": "category","font":AppKit.NSFont.systemFontOfSize_(10),"width":140,"textColor":((1,0,0,1)), 'cell':MTVerticallyCenteredTextFieldCell.alloc().init()}, 
-        {"title": "data","font":("Monaco",10),"alignment":"left",'truncateFromStart':True, 'cell':MTVerticallyCenteredTextFieldCell.alloc().init()},
-        {"title": "problem","font":("Monaco",10),"alignment":"left",'truncateFromStart':True, 'cell':MTVerticallyCenteredTextFieldCell.alloc().init()},
+        # problems = [dict(category=_categories[problem.category],problem=_problems[(problem.category,problem.problem)],data=problem.data) for problem in DSProblemChecker.problems]
+        problems = []
+        for problem in DSProblemChecker.problems:
+            _category = _categories[problem.category]
+            _problem = _problems[(problem.category,problem.problem)]
+            if problem.data is not None:
+                _data = [ f'{key}: {problem.data[key]}' for key in problem.data ]
+            else: _data = ''
+            problems += [
+                dict(
+                        category=_category,
+                        problem=_problem,
+                        data='; '.join(_data),
+                    )
+            ]
+
+        columnDescriptions=[{"title": "category","font":AppKit.NSFont.systemFontOfSize_(10),'minWidth':70,"width":70,"textColor":((1,0,0,1)), 'cell':MTVerticallyCenteredTextFieldCell.alloc().init()}, 
+        {"title": "problem","font":("Monaco",10),"alignment":"left",'truncateFromStart':True, 'cell':MTVerticallyCenteredTextFieldCell.alloc().init(),'maxWidth':215,'minWidth':215,'width':215},
+        {"title": "data","font":("Monaco",10),"alignment":"left",'truncateFromStart':True, 'cell':MTVerticallyCenteredTextFieldCell.alloc().init(),'minWidth':45},
         ]
 
 
