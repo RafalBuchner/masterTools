@@ -5,7 +5,7 @@ from __future__ import print_function, division, absolute_import
 ######################################################
 # testing:
 
-if __name__=='__main__':
+if __name__ == '__main__':
     import sys,os
     from AppKit import NSApp, NSMenu, NSMenuItem
     from lib.UI.fileBrowser import RFPathItem
@@ -23,7 +23,7 @@ if __name__=='__main__':
             newItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(name, "", "")
             menubar.insertItem_atIndex_(newItem, menubar.numberOfItems()-1)
         newItem.setSubmenu_(menu)
-    menu_name = "masterTools-BetaDev"
+    menu_name = "masterTools-Dev"
     libDir = os.path.join( os.path.dirname( __file__ ), '..' )
     sys.path.append(libDir)
     scripts_path = os.path.join(libDir, 'masterToolsScripts')

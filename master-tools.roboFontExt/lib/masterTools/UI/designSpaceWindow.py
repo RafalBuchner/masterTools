@@ -1,5 +1,6 @@
 from vanilla import HelpButton, Sheet, Button, Group, Box, SplitView, TextBox, Window, CheckBoxListCell, GradientButton, SquareButton, ImageButton, ImageView, ImageListCell
 from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
+from vanilla.dialogs import message
 from masterTools.misc.masterSwitcher import switchMasterTo
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell, setTemplateImages
@@ -9,7 +10,6 @@ from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from defconAppKit.windows.baseWindow import BaseWindowController
 from masterTools.misc import getDev, copy2clip
 from mojo.extensions import ExtensionBundle
-import AppKit, os
 from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import AllFonts, CurrentFont, OpenFont, RFont, RGlyph
 from mojo.UI import GetFile
@@ -19,11 +19,14 @@ from masterTools.tools.incompatibilityGlyphBrowserTool import IncompatibleGlyphs
 from masterTools.tools.problemSolvingTools import ProblemSolvingTools
 from designspaceProblems import DesignSpaceChecker
 from pprint import pprint
+import AppKit, os
 import importlib
 designSpaceEditorwindow_loader = importlib.find_loader('designSpaceEditorwindow')
 foundDSEditor = designSpaceEditorwindow_loader is not None
-if foundDSEditor:
-    designSpaceEditorwindow = designSpaceEditorwindow_loader.load_module()
+if not foundDSEditor:
+    AppKit.NSBeep()
+    message("Master-Tools: \n\nTo run this extension, you will need to install LettError's DesignSpaceEditor \n\nhttps://github.com/LettError/designSpaceRoboFontExtension")
+
 
 if getDev():
     import sys, os
@@ -101,7 +104,8 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.initFontsGroup()
         self.initInfoGroup()
         self.initToolsGroup()
-        self.initGlyphGroup() ###TEST
+        self.initHelpersGroup()
+        self.initGlyphGroup()
 
         # setting the fontNameColumn // needed for resizing main window
 
@@ -136,6 +140,13 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 identifier="infoPane",
                 maxSize=self.infoPaneHeight,
                 minSize=self.infoPaneMinHeight,
+                canCollapse=False,
+                resizeFlexibility=False),
+            dict(label="helpers",
+                view=self.helpersPane,
+                identifier="helpersPane",
+                maxSize=self.helpersPaneHeight,
+                minSize=self.helpersPaneMinHeight,
                 canCollapse=False,
                 resizeFlexibility=False),
             dict(label="tools",
@@ -189,6 +200,16 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         addObserver(self, "reloadFontListCB", "fontDidOpen")
         addObserver(self, "reloadFontListCB", "fontDidClose")
         addObserver(self, "fontWillCloseCB", "fontWillClose")
+
+    def initHelpersGroup(self):
+        x,y,p = self.padding
+        self.helpersPane = Group((0, 0, -0, -0))
+        self.helpersPane.caption = TextBox((x, y, 150,self.txtH), "helpers")
+        y = self.txtH + p + p
+        self.helpersPane.openInDSeditorBtn = MTButton((x,y,100,self.btnH), 'open in editor', callback=openDesignSpaceEditorCallback)
+        y += self.btnH + p
+        self.helpersPaneHeight = y
+        self.helpersPaneMinHeight = self.txtH + p * 2
 
     def initGlyphGroup(self):
         x,y,p = self.padding
@@ -421,15 +442,15 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 tool.finish()
 
     def resizeDesignSpaceMainWindow(self, sender):
-        x,y,p = self.padding
-        wx,wy,ww,wh = sender.getPosSize()
+        x, y, p = self.padding
+        wx, wy, ww, wh = sender.getPosSize()
         fontlistBreakingPoint = 260
         fontlistBreakingPoint2 = 440
         fontTable = self.fontNameColumn.tableView()
         infoNameColumn = self.infoPane.box.list.getNSTableView().tableColumns()[0]
 
         itemSize = self.toolsPane.toolbar.itemSize
-        self.toolsPane.toolbar.setPosSize((x,y,ww-2*p,itemSize))
+        self.toolsPane.toolbar.setPosSize((x, y, ww-2*p, itemSize))
         if self.fontNameColumn is not None:
             self.positionNameColumn.setMaxWidth_(300)
             self.positionNameColumn.setMinWidth_(50)
