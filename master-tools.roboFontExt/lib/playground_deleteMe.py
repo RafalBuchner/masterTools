@@ -1,22 +1,22 @@
-from vanilla import Window, List, Popover, TextBox
-
-class PopoverExample:
-
+from vanilla import *
+class ActionPopUpButtonDemo(object):
     def __init__(self):
-        self.w = Window((120, 120))
-        self.w.list = List((0, 0, -0, -0),
-                ['eggs', 'bacon', 'ham', 'beans'],
-                selectionCallback=self.showPopoverCallback)
+        self.w = Window((100, 40))
+        items = [
+                dict(title="first", callback=self.firstCallback),
+                dict(title="second", callback=self.secondCallback),
+                dict(title="third", items=[
+                        dict(title="sub first", callback=self.subFirstCallback)
+                    ])
+            ]
+        self.w.actionPopUpButton = ActionButton((10, 10, 30, 20),
+                              items,
+                              )
         self.w.open()
-
-    def showPopoverCallback(self, sender):
-        selection = sender.getSelection()
-        if not selection:
-            return
-        index = sender.getSelection()[0]
-        relativeRect = sender.getNSTableView().rectOfRow_(index)
-        pop = Popover((140, 180))
-        pop.text = TextBox((10, 10, -10, -10), 'spam '*20)
-        pop.open(parentView=sender, preferredEdge='right', relativeRect=relativeRect)
-
-PopoverExample()
+    def firstCallback(self, sender):
+        print("first")
+    def secondCallback(self, sender):
+        print("second")
+    def subFirstCallback(self, sender):
+        print("sub first")
+ActionPopUpButtonDemo()

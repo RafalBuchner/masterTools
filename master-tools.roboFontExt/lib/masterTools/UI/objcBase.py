@@ -1,7 +1,7 @@
 # coding: utf-8
 from AppKit import NSColor, NSFont, NSTableHeaderCell, NSMakeRect, NSRectFill, NSTextFieldCell, NSSize, NSMenuItem, NSBox, NSPanel, NSWindow, NSObject, NSImage
 import objc
-from vanilla import Group, TextBox, Slider
+from vanilla import Group, TextBox, Slider, EditText, PopUpButton
 from vanilla.vanillaList import VanillaTableViewSubclass
 from mojo.events import publishEvent
 
@@ -88,6 +88,59 @@ class MTSliderAxisMenuItem(NSMenuItem):
         return self._menuGroup.slider
 
     def sliderCallback_(self, sender):
+        if self._callback:
+            self._callback(sender)
+
+class MTEditTextMenuItem(NSMenuItem):
+
+    def __new__(cls, *arg, **kwargs):
+        return cls.alloc().initWithTitle_action_keyEquivalent_("doodle.MTEditText", None, "")
+
+    def __init__(self, title, callback, placeholder=None):
+        self.title = title
+        self._callback = callback
+        self._menuGroup = Group((0, 0, 0, 0))
+
+        self._menuGroup.text = TextBox((20, 3, 100, 18), title, sizeStyle="small")
+        self._menuGroup.editText = EditText((50, 0, -10, 18), placeholder=placeholder, sizeStyle="small", callback=self._editTextCallback)
+        self._menuGroup.editText.title = title
+        self._view = self._menuGroup.getNSView()
+        self._view.setFrame_(NSMakeRect(0, 0, 100, 24))
+
+        self.setView_(self._view)
+
+    def getEditText(self):
+        return self._menuGroup.editText
+    @objc.python_method
+    def _editTextCallback(self, sender):
+        if self._callback:
+            self._callback(sender)
+
+class MTPopUpButtonMenuItem(NSMenuItem):
+
+    def __new__(cls, *arg, **kwargs):
+        return cls.alloc().initWithTitle_action_keyEquivalent_("doodle.MTPopUpButton", None, "")
+
+    def __init__(self, title, items, callback=None):
+        self.title = title
+        self._callback = callback
+        self._menuGroup = Group((0, 0, 0, 0))
+
+        self._menuGroup.text = TextBox((20, 3, 100, 18), title, sizeStyle="small")
+
+        if items is None:
+            items=[]
+        self._menuGroup.popUpButton = PopUpButton((100, 0, -20, 18), items, sizeStyle="small", callback=self.popUpCallback_)
+        self._menuGroup.popUpButton.title = title
+        self._view = self._menuGroup.getNSView()
+        self._view.setFrame_(NSMakeRect(0, 0, 220, 24))
+
+        self.setView_(self._view)
+    @objc.python_method
+    def getPopUpButton(self):
+        return self._menuGroup.popUpButton
+    @objc.python_method
+    def popUpCallback_(self, sender):
         if self._callback:
             self._callback(sender)
 

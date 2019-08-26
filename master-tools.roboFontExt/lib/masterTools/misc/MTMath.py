@@ -1,4 +1,3 @@
-import math
 
 def rotate( P,angle, originPoint):
     """Rotates x/y around x_orig/y_orig by angle and returns result as [x,y]."""

@@ -33,7 +33,7 @@ that can be changed right after the closing the settingsPanel
 
 
 class Settings(object):
-    defaultMasterColors = [(0.9, 0.1, 0.29),
+    defaultColors = [(0.9, 0.1, 0.29),
                            (0.24, 0.71, 0.29),
                            (1.0, 0.88, 0.1),
                            (0.0, 0.51, 0.78),
@@ -54,6 +54,7 @@ class Settings(object):
                            (0.0, 0.0, 0.5),
                            (0.5, 0.5, 0.5),
                            ]
+    darkBackground = (0.1513, 0.1513, 0.1513, 1)
 
     def __init__(self):
 
@@ -65,7 +66,7 @@ class Settings(object):
                 restoreLastDesignSpace=False,
                 previewGlyphName="a",
                 lastDesignspace=None,
-                masterColors=self.defaultMasterColors
+                masterColors=self.defaultColors
             )
         )
         self.__dict = self.__default  # for now

@@ -1,3 +1,4 @@
+from uuid import uuid4
 from ufoProcessor import *
 from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import *
@@ -75,18 +76,22 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def _setFontMasters(self):
         self.fontMasters = []
+        self.fontsById = {}
         for info in self.getFonts():
             font = info[0]
             fontname = os.path.relpath(font.path, self.path)
             fontname = fontname[3:]
+            uniqueID = str(uuid4())
             self.fontMasters += [dict(
                 include=True,
                 fontname=fontname,
                 font=info[0],
                 path=info[0].path,
                 designSpacePosition=info[1],
-                positionString=" ".join([str(position)+": "+str(info[1][position]) for position in info[1]])
+                positionString=" ".join([str(position)+": "+str(info[1][position]) for position in info[1]]),
+                uniqueID=uniqueID
                 )]
+            self.fontsById[uniqueID] = font
         self._fontsLoaded = True
 
     def getFontIndexes(self, font):
@@ -95,6 +100,12 @@ class MasterToolsProcessor(DesignSpaceProcessor):
             if font.path == item['path']:
                 indexes += [i]
         return indexes
+
+    def getCommonGlyphSet(self):
+        glyphSet = []
+        for item in self.fontMasters:
+            glyphSet += [item['font'].glyphOrder]
+        return list(set(glyphSet)).sort()
 
     def getOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
