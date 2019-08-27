@@ -1,22 +1,18 @@
-from vanilla import *
-class ActionPopUpButtonDemo(object):
-    def __init__(self):
-        self.w = Window((100, 40))
-        items = [
-                dict(title="first", callback=self.firstCallback),
-                dict(title="second", callback=self.secondCallback),
-                dict(title="third", items=[
-                        dict(title="sub first", callback=self.subFirstCallback)
-                    ])
-            ]
-        self.w.actionPopUpButton = ActionButton((10, 10, 30, 20),
-                              items,
-                              )
-        self.w.open()
-    def firstCallback(self, sender):
-        print("first")
-    def secondCallback(self, sender):
-        print("second")
-    def subFirstCallback(self, sender):
-        print("sub first")
-ActionPopUpButtonDemo()
+from AppKit import NSApp
+
+masterToolMenu = None
+openRecentMenu = None
+for item in NSApp().mainMenu().itemArray():
+    if 'master' in item.title().lower() and 'tools' in item.title().lower():
+        masterToolMenu = item
+        break
+if masterToolMenu is not None:
+    for item in masterToolMenu.submenu().itemArray():
+        if 'open recent' == item.title().lower():
+            openRecentMenu = item
+            break
+def cb():
+    print('cb')
+openRecentMenu.submenu().addItemWithTitle_action_keyEquivalent_('blabla','cb','')
+openRecentMenu.submenu().setAutoenablesItems_(False)
+            

@@ -2,6 +2,7 @@
 import AppKit
 from mojo.extensions import ExtensionBundle
 from vanilla import *
+from pprint import pprint
 from masterTools.UI.vanillaSubClasses import MTDialog
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from mojo.extensions import setExtensionDefault, getExtensionDefault
@@ -59,6 +60,7 @@ class Settings(object):
     def __init__(self):
 
         self.currentDesignspacePath = None
+        self.recentDesignspacePaths = []
 
         self.__default = (
             dict(
@@ -74,6 +76,7 @@ class Settings(object):
             for setting in self.__dict:
                 if setting in getExtensionDefault(key).keys():
                     self.__dict[setting] = getExtensionDefault(key)[setting]
+            print(getExtensionDefault(key))
 
     def getDict(self):
         return self.__dict
@@ -84,6 +87,7 @@ class Settings(object):
     def closeSettingsPanel(self):
         if self.currentDesignspacePath is not None:
             self.__dict['lastDesignspace'] = self.currentDesignspacePath
+        self.__dict['recentDesignspacePaths'] = self.recentDesignspacePaths
         setExtensionDefault(key, self.__dict)
 
     def settingsPanel(self, parentWindow, startY=None):
@@ -182,8 +186,26 @@ class Settings(object):
         self.__dict[sender.id] = value
 
     #####
-    # global functions
+    # global functions / actions
     #####
+    # def getRecentDesignspacePaths(self):
+    #     self.recentDesignspacePaths = self.__dict.get('recentDesignspacePaths', [])
+    #     print('>>> ', self.recentDesignspacePaths)
+    #     return list(reversed(self.recentDesignspacePaths))
+
+    def setRecentDesignspacePaths(self, path):
+        self.currentDesignspacePath = path
+        if path not in self.recentDesignspacePaths:
+            self.recentDesignspacePaths.append(path)
+        else:
+            self.recentDesignspacePaths.append(
+                    self.recentDesignspacePaths.pop(
+                        self.recentDesignspacePaths.index(path)
+                        )
+                ) 
+        if len(self.recentDesignspacePaths) > 10:
+            self.recentDesignspacePaths.pop(0)
+
     def getGlyphCellPreview_inFont(self, font, size=(100, 100), glyphColor=None):
         '''
             returns preview glyph based on previewGlyphName

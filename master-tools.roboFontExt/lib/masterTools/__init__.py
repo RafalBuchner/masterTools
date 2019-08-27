@@ -8,26 +8,71 @@ from __future__ import print_function, division, absolute_import
 if __name__ == '__main__':
     import sys,os
     from AppKit import NSApp, NSMenu, NSMenuItem
+    from mojo.UI import MenuBuilder
     from lib.UI.fileBrowser import RFPathItem
+    from mojo.roboFont import OpenWindow
     currpath = os.path.join( os.path.dirname( __file__ ), '..' )
     sys.path.append(currpath)
     sys.path = list(set(sys.path))
     pathForBundle = os.path.abspath(os.path.join(__file__ ,"../../.."))    ####
+    from masterTools.UI.designSpaceWindow import DesignSpaceWindow
+    from masterTools.UI.settings import Settings
+    __uiSettingsController = Settings()
+    __uiSettings = __uiSettingsController.getDict()
+
+    # def add_menu(name, path):
+    #     menu = NSMenu.alloc().initWithTitle_(name)
+    #     pathItem = RFPathItem(path, [".py"], isRoot=True)
+    #     pathItem.getMenu(title=name, parentMenu=menu)
+    #     menubar = NSApp().mainMenu()
+    #     newItem = menubar.itemWithTitle_(name)
+    #     if not newItem:
+    #         newItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(name, "", "")
+    #         menubar.insertItem_atIndex_(newItem, menubar.numberOfItems()-1)
+    #     newItem.setSubmenu_(menu)
+    def _openRecentCallback(sender):
+            path = sender.getTitle()
+            DSW = OpenWindow(DesignSpaceWindow)
+
+            DSW.loadDesignSpaceFile(path)
+
     def add_menu(name, path):
-        menu = NSMenu.alloc().initWithTitle_(name)
-        pathItem = RFPathItem(path, [".py"], isRoot=True)
-        pathItem.getMenu(title=name, parentMenu=menu)
+ 
         menubar = NSApp().mainMenu()
         newItem = menubar.itemWithTitle_(name)
         if not newItem:
             newItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(name, "", "")
             menubar.insertItem_atIndex_(newItem, menubar.numberOfItems()-1)
+        recentList = []
+        
+        builder = MenuBuilder([('open recent',[])])
+        menu = builder.getMenu()
+        menu.setTitle_(name)
+        pathItem = RFPathItem(path, [".py"], isRoot=True)
+        pathItem.getMenu(title=name, parentMenu=menu)
         newItem.setSubmenu_(menu)
+
     menu_name = "masterTools-Dev"
     libDir = os.path.join( os.path.dirname( __file__ ), '..' )
     sys.path.append(libDir)
     scripts_path = os.path.join(libDir, 'masterToolsScripts')
     add_menu(menu_name, scripts_path)
+
+
+    masterToolMenu = None
+    openRecentMenu = None
+    for item in NSApp().mainMenu().itemArray():
+        if 'master' in item.title().lower() and 'tools' in item.title().lower():
+            masterToolMenu = item
+            break
+    if masterToolMenu is not None:
+        for item in masterToolMenu.submenu().itemArray():
+            if 'open recent' == item.title().lower():
+                openRecentMenu = item
+                break
+    openRecentMenu.submenu().setAutoenablesItems_(False)
+    for path in __uiSettings.getRecentDesignspacePaths():
+        openRecentMenu.submenu().addItemWithTitle_action_keyEquivalent_(path,'_openRecentCallback','')
 ######################################################
 ######################################################
 ######################################################
@@ -51,8 +96,8 @@ from masterTools.tools.masterCompatibilityTable import *
 
 if __name__ == "__main__":
     from masterTools.UI.designSpaceWindow import DesignSpaceWindow
-    from mojo.UI import OutputWindow
     from mojo.roboFont import OpenWindow
+    from mojo.UI import OutputWindow
     ow = OutputWindow()
     ow.clear()
     ow.show()

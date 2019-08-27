@@ -206,7 +206,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.helpersPane = Group((0, 0, -0, -0))
         self.helpersPane.caption = TextBox((x, y, 150,self.txtH), "helpers")
         y = self.txtH + p + p
-        self.helpersPane.openInDSeditorBtn = MTButton((x,y,100,self.btnH), 'open in editor', callback=openDesignSpaceEditorCallback)
+        self.helpersPane.openInDSeditorBtn = MTButton((x,y,100,self.btnH), 'open in editor', callback=self.openDesignSpaceEditorCallback)
         y += self.btnH + p
         self.helpersPaneHeight = y
         self.helpersPaneMinHeight = self.txtH + p * 2
@@ -512,13 +512,16 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
 
     def loadDesignSpaceFile(self, path):
+        if not os.path.exists(path):
+            message('Master-Tools\n\nFile doesn\'t exists')
         problem = DesignSpaceChecker(path)
         problem.checkEverything()
         if problem.hasStructuralProblems():
             MTDesignSpaceLoadingProblem(path, parentController=self, foundDSEditor=foundDSEditor,DSProblemChecker=problem)
             return
 
-        self.uiSettingsControler.currentDesignspacePath = path
+
+        self.uiSettingsControler.setRecentDesignspacePaths(path)
         designSpaceLoaded = self.loadDesignSpace(path)
         lineType =AppKit.NSTableViewSolidHorizontalGridLineMask
         self.fontPane.list.getNSTableView().setGridStyleMask_(lineType)
