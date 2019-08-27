@@ -1,4 +1,4 @@
-import os
+import os, sys
 from AppKit import NSApp, NSMenuItem
 from mojo.UI import MenuBuilder
 from lib.UI.fileBrowser import RFPathItem
@@ -11,7 +11,7 @@ def add_menu(name, path):
         newItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(name, "", "")
         menubar.insertItem_atIndex_(newItem, menubar.numberOfItems()-1)
     recentList = []
-    builder = MenuBuilder()
+    builder = MenuBuilder([])
     menu = builder.getMenu()
     menu.setTitle_(name)
     pathItem = RFPathItem(path, [".py"], isRoot=True)

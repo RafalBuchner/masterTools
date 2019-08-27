@@ -17,10 +17,12 @@ from masterTools.tools.masterCompatibilityTable import CompatibilityTableWindow
 from masterTools.tools.kinkManager import KinkManager
 from masterTools.tools.incompatibilityGlyphBrowserTool import IncompatibleGlyphsBrowser
 from masterTools.tools.problemSolvingTools import ProblemSolvingTools
+from masterTools.helpers.solveCompatibilityOrderManually import ManualCompatibilityHelper
 from designspaceProblems import DesignSpaceChecker
 from pprint import pprint
 import AppKit, os
 import importlib
+from mojo.roboFont import OpenWindow
 designSpaceEditorwindow_loader = importlib.find_loader('designSpaceEditorwindow')
 foundDSEditor = designSpaceEditorwindow_loader is not None
 if not foundDSEditor:
@@ -202,11 +204,20 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         addObserver(self, "fontWillCloseCB", "fontWillClose")
 
     def initHelpersGroup(self):
+        def _btnCallback(sender):
+            tools = dict(
+                    ManualCompatibilityHelper=ManualCompatibilityHelper
+                )
+            OpenWindow(tools[sender.toolName](self.designspace))
+
         x,y,p = self.padding
         self.helpersPane = Group((0, 0, -0, -0))
         self.helpersPane.caption = TextBox((x, y, 150,self.txtH), "helpers")
         y = self.txtH + p + p
         self.helpersPane.openInDSeditorBtn = MTButton((x,y,100,self.btnH), 'open in editor', callback=self.openDesignSpaceEditorCallback)
+        y += self.btnH + p
+        self.helpersPane.manualCompatibilityHelperBtn = MTButton((x,y,100,self.btnH), 'manual reordering (wip)', callback=_btnCallback)
+        self.helpersPane.manualCompatibilityHelperBtn.toolName = 'ManualCompatibilityHelper'
         y += self.btnH + p
         self.helpersPaneHeight = y
         self.helpersPaneMinHeight = self.txtH + p * 2
@@ -581,7 +592,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
 def test():
     import os
-    from mojo.roboFont import OpenWindow
+    
 
     o = OpenWindow(DesignSpaceWindow)#, path)
 
