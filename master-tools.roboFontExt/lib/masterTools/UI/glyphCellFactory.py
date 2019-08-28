@@ -1,7 +1,28 @@
 from AppKit import NSColor, NSGraphicsContext, NSForegroundColorAttributeName, NSAttributedString, NSFont, \
     NSFontAttributeName, NSAffineTransform, NSRectFill, NSRectFillListUsingOperation, NSImage, NSParagraphStyleAttributeName, \
     NSBezierPath, NSMutableParagraphStyle, NSCenterTextAlignment, NSLineBreakByTruncatingMiddle, NSCompositeSourceOver
+from mojo.extensions import ExtensionBundle
+from masterTools.misc import getDev
+from mojo.roboFont import RFont
+import os
 
+bundle = ExtensionBundle("master-tools")
+if getDev():
+    import sys, os
+    currpath = os.path.join( os.path.dirname( __file__ ), '../..' )
+    sys.path.append(currpath)
+    sys.path = list(set(sys.path))
+    pathForBundle = os.path.abspath(os.path.join(__file__ ,"../../../.."))
+    resourcePathForBundle = os.path.join(pathForBundle, "resources")
+    bundle = ExtensionBundle(path=pathForBundle, resourcesName=resourcePathForBundle)
+    print("ALALALAL")
+else:
+    bundle = ExtensionBundle("master-tools")
+
+nodef_fontPath = os.path.join(bundle.resourcesPath(),'nodefFont.ufo')
+
+nodef_glyph = RFont(nodef_fontPath,False)['.notdef']
+nodef_glyph.font.close()
 
 
 GlyphCellHeaderHeight = 14
@@ -20,6 +41,15 @@ def GlyphCellFactory(glyph, width, height, glyphColor, bufferPercent=.2, drawHea
     obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height,glyphColor=glyphColor,bufferPercent=bufferPercent, drawHeader=drawHeader, drawMetrics=drawMetrics, selectionWithColor=selectionWithColor, drawGlyph=drawGlyph)
     return obj.getImage()
 
+def GlyphCellFactoryWithNotDef(glyphName,font, width, height, glyphColor, bufferPercent=.2, drawHeader=False, drawMetrics=False, selectionWithColor=None, drawGlyph=True):
+    if glyphName in font:
+        glyph = font[glyphName]
+    else: 
+        glyph = nodef_glyph
+        selectionWithColor = None
+
+    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height,glyphColor=glyphColor,bufferPercent=bufferPercent, drawHeader=drawHeader, drawMetrics=drawMetrics, selectionWithColor=selectionWithColor, drawGlyph=drawGlyph)
+    return obj.getImage()
 
 class GlyphCellFactoryDrawingController(object):
 
@@ -225,34 +255,34 @@ class GlyphCellFactoryDrawingController(object):
         }
         text = NSAttributedString.alloc().initWithString_attributes_(self.glyph.name, attributes)
         text.drawInRect_(rect)
-if __name__=="__main__":
+# if __name__=="__main__":
 
-    from vanilla import *
-    from masterTools.UI.settings import Settings
-    uiSettings = Settings().getDict()
+#     from vanilla import *
+#     from masterTools.UI.settings import Settings
+#     uiSettings = Settings().getDict()
 
-    class ListDemo(object):
-        def __init__(self):
-            # path = '/Users/rafalbuchner/Dropbox/tests/Book-Rafal-03.ufo'
-            # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
-            path = '/Users/rafalbuchner/Dropbox/type_stuff/myLibrary/playground/barbara_convert/Anaheim-Black BB12.ufo'
-            font = OpenFont(path, False)
-            fontListColumnDescriptions = [
-                dict(title="glyph",cell=ImageListCell(), width=220)
-                ]
-            selectionWithColor = dict(
-                    contours={0:NSColor.grayColor()}
-                )
-            items = [dict(
-                glyph=GlyphCellFactory(
-                    g, 240, 240, glyphColor=NSColor.blackColor(), selectionWithColor=selectionWithColor,
-                    )
-                )for g in font if len(g.contours) > 0]
-            self.w = HUDFloatingWindow((400, 700))
-            self.w.list = List(
-                            (0,0,-0,-0),
-                            items,# test
-                            rowHeight=250,
-                            columnDescriptions=fontListColumnDescriptions)
-            self.w.open()
-    ListDemo()
+#     class ListDemo(object):
+#         def __init__(self):
+#             # path = '/Users/rafalbuchner/Dropbox/tests/Book-Rafal-03.ufo'
+#             # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
+#             path = '/Users/rafalbuchner/Dropbox/type_stuff/myLibrary/playground/barbara_convert/Anaheim-Black BB12.ufo'
+#             font = OpenFont(path, False)
+#             fontListColumnDescriptions = [
+#                 dict(title="glyph",cell=ImageListCell(), width=220)
+#                 ]
+#             selectionWithColor = dict(
+#                     contours={0:NSColor.grayColor()}
+#                 )
+#             items = [dict(
+#                 glyph=GlyphCellFactory(
+#                     g, 240, 240, glyphColor=NSColor.blackColor(), selectionWithColor=selectionWithColor,
+#                     )
+#                 )for g in font if len(g.contours) > 0]
+#             self.w = HUDFloatingWindow((400, 700))
+#             self.w.list = List(
+#                             (0,0,-0,-0),
+#                             items,# test
+#                             rowHeight=250,
+#                             columnDescriptions=fontListColumnDescriptions)
+#             self.w.open()
+#     ListDemo()

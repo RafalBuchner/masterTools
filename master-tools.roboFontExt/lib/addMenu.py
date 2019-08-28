@@ -3,6 +3,9 @@ from AppKit import NSApp, NSMenuItem
 from mojo.UI import MenuBuilder
 from lib.UI.fileBrowser import RFPathItem
 
+
+
+
 def add_menu(name, path):
 
     menubar = NSApp().mainMenu()

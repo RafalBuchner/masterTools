@@ -4,7 +4,7 @@ from pprint import pprint
 import objc
 from masterTools.helpers.solveCompatibilityOrderManually import ManualCompatibilityHelper
 from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
-from masterTools.UI.glyphCellFactory import GlyphCellFactory
+from masterTools.UI.glyphCellFactory import GlyphCellFactoryWithNotDef
 from masterTools.UI.vanillaSubClasses import MTDialog, MTList, MTVerticallyCenteredTextFieldCell
 from vanilla import *
 from masterTools.UI.settings import Settings
@@ -51,8 +51,8 @@ class DragAndDropReorder(MTDialog):
                             _element_name:{index:NSColor.cyanColor()}
                         }
                     if index < len(_element):
-                        items[index] += [dict(glyph=GlyphCellFactory(
-                                glyph, 240, 240, glyphColor=glyphColor, selectionWithColor=selectionWithColor,
+                        items[index] += [dict(glyph=GlyphCellFactoryWithNotDef(
+                                glyph.name,glyph.font, 240, 240, glyphColor=glyphColor, selectionWithColor=selectionWithColor,
                                 ))]
 
         fontListColumnDescriptions = [
@@ -139,10 +139,8 @@ class DragAndDropReorder(MTDialog):
             print(test)
             return True
         return True
-
-
 def main():
-    dsPath = '/Users/rafalbuchner/Documents/repos/scripts/RoboFont3.0/+GOOGLE/master-tools/test_designSpace/mutatorSans-master/MutatorSans.designspace'
+    dsPath = '../../test_designSpace/mutatorSans-master/MutatorSans.designspace'
     designspace = MasterToolsProcessor()
     designspace.read(dsPath)
     designspace.loadFonts()

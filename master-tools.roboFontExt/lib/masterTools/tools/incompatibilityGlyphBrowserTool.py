@@ -9,7 +9,7 @@ from masterTools.UI.settings import Settings
 
 from masterTools.UI.vanillaSubClasses import MTList,  MTFloatingDialog
 from masterTools.UI.objcBase import MTVerticallyCenteredTextFieldCell
-from masterTools.UI.glyphCellFactory import GlyphCellFactory
+from masterTools.UI.glyphCellFactory import GlyphCellFactoryWithNotDef
 
 from defconAppKit.controls.glyphCollectionView import GlyphCollectionView
 
@@ -179,7 +179,6 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
     # tool actions
 
     def testIncompaibility(self, sender=None):
-        print('ajajaj')
         self.currfont = CurrentFont()
         if self.currfont is None:
             self.currfont = self.designspace.fontMasters[0]['font']
@@ -203,8 +202,8 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
                 _data += dataCategory+': '+data[dataCategory]
             if _data == " -> ":
                 _data = ''
-
-            self.glyph_problems[glyph] += ['– '+problemDescription['problem'] + _data]
+            if '– '+problemDescription['problem'] + _data not in self.glyph_problems[glyph]:
+                self.glyph_problems[glyph] += ['– '+problemDescription['problem'] + _data]
 
 
         glyphsOrder = []
@@ -224,9 +223,9 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         self.items = []
         for glyphName in self.lettersWithIssues:
             data = ""
-
+            cell = GlyphCellFactoryWithNotDef(glyphName,self.currfont, 150, 150, glyphColor=self.glyphColor, bufferPercent=.01),
             self.items += [dict(
-                            glyph=GlyphCellFactory(self.currfont[glyphName], 150, 150, glyphColor=self.glyphColor, bufferPercent=.01),
+                            glyph=cell
                             problems='\n'.join(self.glyph_problems[glyphName]),
                             name=glyphName,
                             )]

@@ -5,7 +5,7 @@ from vanilla import *
 from pprint import pprint
 from masterTools.UI.vanillaSubClasses import MTDialog
 from masterTools.UI.glyphCellFactory import GlyphCellFactory
-from mojo.extensions import setExtensionDefault, getExtensionDefault
+from mojo.extensions import setExtensionDefault, getExtensionDefault, ExtensionBundle
 from vanilla.vanillaBase import osVersionCurrent, osVersion10_14
 # print(masterTools.UI.vanillaSubClasses)
 # if getDev():

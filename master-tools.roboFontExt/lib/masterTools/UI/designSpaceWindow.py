@@ -42,6 +42,7 @@ if getDev():
     bundle = ExtensionBundle(path=pathForBundle, resourcesName=resourcePathForBundle)
 else:
     bundle = ExtensionBundle("master-tools")
+# bundle = ExtensionBundle("master-tools")
 
 table_icon       = bundle.getResourceImage("table-icon", ext='pdf')
 drop_icon        = bundle.getResourceImage("drop-icon", ext='pdf')
@@ -494,7 +495,10 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
 
     def openDesignSpaceEditorCallback(self, sender):
-        path = self.designspace.path
+        if self.designspace is not None:
+            path = self.designspace.path
+        else:
+            path = sender.path
         designSpaceEditorwindow.DesignSpaceEditor(path)
 
     def openDesignSpaceCallback(self, sender):
