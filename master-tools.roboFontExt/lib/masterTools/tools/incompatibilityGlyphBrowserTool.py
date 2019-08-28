@@ -89,17 +89,44 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         y += self.txtH*2 + p
         self.w.view = Group((0,y,-0,-0))
         columnDescriptions = [
-                                dict(title='glyph', cell=ImageListCell()),
-                                # dict(title='problems', cell=MTVerticallyCenteredTextFieldCell.alloc().init()),
-                                dict(title='name', cell=MTVerticallyCenteredTextFieldCell.alloc().init(),width=42), ]
+                                dict(title='glyph', cell=ImageListCell(),width=100),
+                                dict(title='name', cell=MTVerticallyCenteredTextFieldCell.alloc().init(),width=20), 
+                                dict(title='problems', cell=MTVerticallyCenteredTextFieldCell.alloc().init(),minWidth=350,width=350),
+                                ]
         self.w.view.glyphs = MTList((0,0,-0,-0),self.items,
             columnDescriptions=columnDescriptions,
             rowHeight=45,selectionCallback=self.showPopoverCallback,
             allowsMultipleSelection=False,
             showColumnTitles=False,doubleClickCallback=self.doubleClickCallback)
+        self.w.view.glyphs.setSelection([])
 
         self.w.open()
+        self.w.bind('resize', self.windowResizeCallback)
+        self.windowResizeCallback(self.w)
         
+
+    def windowResizeCallback(self, window):
+        x,y,w,h = window.getPosSize()
+        if self.items:
+            biggestNumOfProblems = max([len(item['problems'].split('\n')) for item in self.items])
+        table = self.w.view.glyphs.getNSTableView()
+        glyphCellColumn = table.tableColumns()[0]
+        problemsColumn = table.tableColumns()[-1]
+        glyphCellColumn.setResizable_(False)
+        if w < 300:
+            problemsColumn.setHidden_(True)
+            problemsColumn.setResizable_(True)
+            problemsColumn.setMinWidth_(350)
+            problemsColumn.setWidth_(350)
+            glyphCellColumn.setWidth_(100)
+            table.setRowHeight_(45)
+        else:
+            problemsColumn.setHidden_(False)
+            problemsColumn.setResizable_(False)
+            glyphCellColumn.setWidth_(100)
+            if self.txtH*biggestNumOfProblems > 45:
+                table.setRowHeight_(self.txtH*biggestNumOfProblems)
+
 
     def doubleClickCallback(self, sender):
         selection = sender.getSelection()[0]
@@ -152,6 +179,7 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
     # tool actions
 
     def testIncompaibility(self, sender=None):
+        print('ajajaj')
         self.currfont = CurrentFont()
         if self.currfont is None:
             self.currfont = self.designspace.fontMasters[0]['font']

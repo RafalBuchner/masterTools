@@ -16,8 +16,8 @@ cellMetricsLineColor = NSColor.colorWithCalibratedWhite_alpha_(0, .08)
 cellMetricsFillColor = NSColor.colorWithCalibratedWhite_alpha_(0, .08)
 
 
-def GlyphCellFactory(glyph, width, height, glyphColor, bufferPercent=.2, drawHeader=False, drawMetrics=False):
-    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height,glyphColor=glyphColor,bufferPercent=bufferPercent, drawHeader=drawHeader, drawMetrics=drawMetrics)
+def GlyphCellFactory(glyph, width, height, glyphColor, bufferPercent=.2, drawHeader=False, drawMetrics=False, selectionWithColor=None, drawGlyph=True):
+    obj = GlyphCellFactoryDrawingController(glyph=glyph, font=glyph.font, width=width, height=height,glyphColor=glyphColor,bufferPercent=bufferPercent, drawHeader=drawHeader, drawMetrics=drawMetrics, selectionWithColor=selectionWithColor, drawGlyph=drawGlyph)
     return obj.getImage()
 
 
@@ -45,7 +45,7 @@ class GlyphCellFactoryDrawingController(object):
     """
 
 
-    def __init__(self, glyph, font, width, height, bufferPercent, glyphColor, drawHeader=False, drawMetrics=False):
+    def __init__(self, glyph, font, width, height, bufferPercent, glyphColor, drawHeader=False, drawMetrics=False, selectionWithColor=None, drawGlyph=True):
         self.glyph = glyph
         self.glyphColor = glyphColor
         self.font = font
@@ -54,7 +54,8 @@ class GlyphCellFactoryDrawingController(object):
         self.bufferPercent = bufferPercent
         self.shouldDrawHeader = drawHeader
         self.shouldDrawMetrics = drawMetrics
-
+        self.selectionWithColor = selectionWithColor
+        self.drawGlyph=drawGlyph
         self.headerHeight = 0
         if drawHeader:
             self.headerHeight = GlyphCellHeaderHeight
@@ -146,9 +147,29 @@ class GlyphCellFactoryDrawingController(object):
         NSRectFillListUsingOperation(rects, len(rects), NSCompositeSourceOver)
 
     def drawCellGlyph(self):
-        self.glyphColor.set()
-        path = self.glyph.getRepresentation("defconAppKit.NSBezierPath")
-        path.fill()
+        if self.drawGlyph:
+            self.glyphColor.set()
+            path = self.glyph.getRepresentation("defconAppKit.NSBezierPath")
+            path.fill()
+
+            
+        if self.selectionWithColor is not None:
+            contoursIndexesAndColors = self.selectionWithColor.get('contours')
+            if contoursIndexesAndColors is not None:
+                for contourIndex in contoursIndexesAndColors:
+                    color = contoursIndexesAndColors[contourIndex]
+                    color.set()
+                    path = self.glyph.contours[contourIndex].getRepresentation("defconAppKit.NSBezierPath")
+                    path.fill()
+
+            componentsIndexesAndColors = self.selectionWithColor.get('components')
+            if componentsIndexesAndColors is not None:
+                for componentIndex in componentsIndexesAndColors:
+                    color = componentsIndexesAndColors[contourIndex]
+                    color.set()
+                    path = self.glyph.components[componentIndex].getRepresentation("defconAppKit.NSBezierPath")
+                    path.fill()
+
 
     # def drawCellGlyph(self):
     #     layers = self.font.layers
@@ -213,13 +234,20 @@ if __name__=="__main__":
     class ListDemo(object):
         def __init__(self):
             # path = '/Users/rafalbuchner/Dropbox/tests/Book-Rafal-03.ufo'
-            path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
-            path = '/Users/rafaelbuchner/Downloads/Anaheim/new/Anaheim-Regular BB17.ufo'
+            # path = '/Users/rafalbuchner/Documents/repos/work/+GAMER/gamer/+working_files/regular/G-Re-Medium-02.ufo'
+            path = '/Users/rafalbuchner/Dropbox/type_stuff/myLibrary/playground/barbara_convert/Anaheim-Black BB12.ufo'
             font = OpenFont(path, False)
             fontListColumnDescriptions = [
                 dict(title="glyph",cell=ImageListCell(), width=220)
                 ]
-            items = [dict(glyph=GlyphCellFactory(g, 240, 240, glyphColor=NSColor.blackColor()))for g in font]
+            selectionWithColor = dict(
+                    contours={0:NSColor.grayColor()}
+                )
+            items = [dict(
+                glyph=GlyphCellFactory(
+                    g, 240, 240, glyphColor=NSColor.blackColor(), selectionWithColor=selectionWithColor,
+                    )
+                )for g in font if len(g.contours) > 0]
             self.w = HUDFloatingWindow((400, 700))
             self.w.list = List(
                             (0,0,-0,-0),

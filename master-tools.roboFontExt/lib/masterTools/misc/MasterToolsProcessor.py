@@ -105,7 +105,9 @@ class MasterToolsProcessor(DesignSpaceProcessor):
         glyphSet = []
         for item in self.fontMasters:
             glyphSet += [item['font'].glyphOrder]
-        return list(set(glyphSet)).sort()
+        glyphSet = list(set(glyphSet))
+        glyphSet.sort()
+        return glyphSet
 
     def getOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
@@ -147,6 +149,22 @@ class MasterToolsProcessor(DesignSpaceProcessor):
         publishEvent("MT.designspace.fontMastersChanged", designspace=self)
         # self.loadFonts(reload=True)
 
+    def getMaxNumberOfContoursInDesignSpace_forGlyph(self, glyphName):
+        numbersOfContours = []
+        for item in self.fontMasters:
+            numbersOfContours += [len(item['font'][glyphName].contours)]
+        if numbersOfContours:
+            return max(numbersOfContours)
+        else:
+            return 0    
+    def getMaxNumberOfComponentsInDesignSpace_forGlyph(self, glyphName):
+        numbersOfComponents = []
+        for item in self.fontMasters:
+            numbersOfComponents += [len(item['font'][glyphName].components)]
+        if numbersOfComponents:
+            return max(numbersOfComponents)
+        else:
+            return 0
     @property
     def fontMasters(self):
         return self.__fontMasters

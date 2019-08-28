@@ -76,7 +76,7 @@ class Settings(object):
             for setting in self.__dict:
                 if setting in getExtensionDefault(key).keys():
                     self.__dict[setting] = getExtensionDefault(key)[setting]
-            print(getExtensionDefault(key))
+
 
     def getDict(self):
         return self.__dict

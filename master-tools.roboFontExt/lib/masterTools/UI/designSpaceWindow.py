@@ -28,6 +28,8 @@ foundDSEditor = designSpaceEditorwindow_loader is not None
 if not foundDSEditor:
     AppKit.NSBeep()
     message("Master-Tools: \n\nTo run this extension, you will need to install LettError's DesignSpaceEditor \n\nhttps://github.com/LettError/designSpaceRoboFontExtension")
+else:
+    import designSpaceEditorwindow
 
 
 if getDev():
@@ -307,7 +309,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 dict(objname="compatibilityTable", imageObject=table_icon, toolTip="comaptibility table", callback=self.compatibilityTableToolitemCB),
                 dict(objname="kinkManager", imageObject=kink_icon, toolTip="kink manager", callback=self.kinkManagerToolitemCB),
                 dict(objname="incompatibleGlyphsBrowser", imageObject=glyphs_icon, toolTip="incompatible glyphs browser", callback=self.incompatibleGlyphsBrowserToolitemCB),
-                dict(objname="problemSolvingTools", imageObject=problem_icon, toolTip="problem solving tools", callback=self.problemSolvingToolsitemCB),
+                # dict(objname="problemSolvingTools", imageObject=problem_icon, toolTip="problem solving tools", callback=self.problemSolvingToolsitemCB),
             ]
         self.toolsPane.toolbar = self.toolbar((x,y), items=toolbarItems, itemSize=self.btnH*3, padding=20)
         #self.toolsPane.toolbar = self.toolbar((x,y), items=toolbarItems, itemSize=self.btnH*3, padding=0)
@@ -492,7 +494,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
 
     def openDesignSpaceEditorCallback(self, sender):
-        path = sender.path
+        path = self.designspace.path
         designSpaceEditorwindow.DesignSpaceEditor(path)
 
     def openDesignSpaceCallback(self, sender):
