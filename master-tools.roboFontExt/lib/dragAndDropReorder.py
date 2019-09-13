@@ -3,7 +3,7 @@
 # from pprint import pprint
 # from copy import deepcopy
 # import objc
-# from masterTools.helpers.solveCompatibilityOrderManually import ManualCompatibilityHelper
+# from masterTools.helpers.manualCompatibilityHelper import ManualCompatibilityHelper
 # from masterTools.misc.MasterToolsProcessor import MasterToolsProcessor
 # from masterTools.UI.glyphCellFactory import GlyphCellFactoryWithNotDef
 # from masterTools.UI.vanillaSubClasses import MTDialog, MTList, MTVerticallyCenteredTextFieldCell
@@ -13,20 +13,19 @@
 # glyphColor = uiSettingsController.getGlyphColor_forCurrentMode()
 # genericListPboardType = "genericListPboardType"
 # class DragAndDropReorder(MTDialog):
-
 #     def __init__(self, possize, designspace):
 #         self.designspace = designspace
 #         self.draggedItemInfo = None
 #         self.glyphName = 'K'
 
 
-#         self.listview = Group((0,0,-0,-0))
-#         self.w = HUDFloatingWindow((400, 700),minSize=(400, 700))
-#         self.w.listview = self.listview
+#         self.listview = Group(possize)
+#         self.listview = self.listview
 #         self.setItems()
 
-#         self.w.open()
-
+#     def getView(self):
+#         return self.listview
+        
 #     def updateGlyph(self, name):
 #         self.glyphName = name
 #         self.setItems()
@@ -129,9 +128,9 @@
 #             #     b'viewBoundsDidChange:',
 #             #     AppKit.NSViewBondsDidChangeNotification,
 #             #     view.list.getNSScrollView().contentView())
-#         if hasattr(self.w.listview, 'columns'):
-#             del self.w.listview.columns
-#         self.w.listview.columns = SplitView((0, 0, -0, -0), 
+#         if hasattr(self.listview, 'columns'):
+#             del self.listview.columns
+#         self.listview.columns = SplitView((0, 0, -0, -0), 
 #             self.paneDescriptors, dividerStyle='thin'
 #             )
 

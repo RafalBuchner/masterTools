@@ -17,7 +17,7 @@ from masterTools.tools.masterCompatibilityTable import CompatibilityTableWindow
 from masterTools.tools.kinkManager import KinkManager
 from masterTools.tools.incompatibilityGlyphBrowserTool import IncompatibleGlyphsBrowser
 from masterTools.tools.problemSolvingTools import ProblemSolvingTools
-from masterTools.helpers.solveCompatibilityOrderManually import ManualCompatibilityHelper
+from masterTools.helpers.manualCompatibilityHelper import ManualCompatiblityHelper
 from designspaceProblems import DesignSpaceChecker
 from pprint import pprint
 import AppKit, os
@@ -209,7 +209,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     def initHelpersGroup(self):
         def _btnCallback(sender):
             tools = dict(
-                    ManualCompatibilityHelper=ManualCompatibilityHelper
+                    ManualCompatibilityHelper=ManualCompatiblityHelper
                 )
             OpenWindow(tools[sender.toolName](self.designspace))
 
@@ -473,6 +473,9 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             else:
                 self.positionNameColumn.setHidden_(False)
             if ww <= fontlistBreakingPoint:
+                if self.fontPane.openDesignSpaceButton.getTitle() != 'open':
+                    self.fontPane.openDesignSpaceButton.setPosSize((-50-p, y,50,self.txtH))
+                    self.fontPane.openDesignSpaceButton.setTitle('open')
                 self.glyphExampleColumn.setResizable_(True)
                 self.glyphExampleColumn.setMaxWidth_(300)
                 self.glyphExampleColumn.setMinWidth_(40)
@@ -482,6 +485,9 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 fontTable.setRowHeight_(bigRowHeight)
                 fontTable.sizeToFit()
             else:
+                if self.fontPane.openDesignSpaceButton.getTitle() != 'open in editor':
+                    self.fontPane.openDesignSpaceButton.setPosSize((-110-p, y,110,self.txtH))
+                    self.fontPane.openDesignSpaceButton.setTitle('open in editor')
                 self.glyphExampleColumn.setResizable_(False)
                 self.glyphExampleColumn.setMaxWidth_(60)
                 self.glyphExampleColumn.setMinWidth_(60)

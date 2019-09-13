@@ -18,6 +18,12 @@ from pprint import pprint
 from designspaceProblems import DesignSpaceChecker
 from designspaceProblems.problems import DesignSpaceProblem
 from random import random
+
+'''
+    TODO: if I have bigger clipview than the screen, 
+    the scrolling appear. It messes up the popup views
+'''
+
 # from mojo.events import addObserver, removeObserver
 # from mojo.canvas import CanvasGroup
 # from mojo.UI import AllGlyphWindows
@@ -90,8 +96,8 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         self.w.view = Group((0,y,-0,-0))
         columnDescriptions = [
                                 dict(title='glyph', cell=ImageListCell(),width=100),
-                                dict(title='name', cell=MTVerticallyCenteredTextFieldCell.alloc().init(),width=20), 
-                                dict(title='problems', cell=MTVerticallyCenteredTextFieldCell.alloc().init(),minWidth=350,width=350),
+                                dict(title='name', cell=MTVerticallyCenteredTextFieldCell.alloc().init(),width=100), 
+                                dict(title='problems', cell=MTVerticallyCenteredTextFieldCell.alloc().init(),minWidth=500,width=500),
                                 ]
         self.w.view.glyphs = MTList((0,0,-0,-0),self.items,
             columnDescriptions=columnDescriptions,
@@ -116,8 +122,8 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         if w < 300:
             problemsColumn.setHidden_(True)
             problemsColumn.setResizable_(True)
-            problemsColumn.setMinWidth_(350)
-            problemsColumn.setWidth_(350)
+            problemsColumn.setMinWidth_(500)
+            problemsColumn.setWidth_(500)
             glyphCellColumn.setWidth_(100)
             table.setRowHeight_(45)
         else:
@@ -223,9 +229,9 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
         self.items = []
         for glyphName in self.lettersWithIssues:
             data = ""
-            cell = GlyphCellFactoryWithNotDef(glyphName,self.currfont, 150, 150, glyphColor=self.glyphColor, bufferPercent=.01),
+            cell = GlyphCellFactoryWithNotDef(glyphName,self.currfont, 150, 150, glyphColor=self.glyphColor, bufferPercent=.01)
             self.items += [dict(
-                            glyph=cell
+                            glyph=cell,
                             problems='\n'.join(self.glyph_problems[glyphName]),
                             name=glyphName,
                             )]

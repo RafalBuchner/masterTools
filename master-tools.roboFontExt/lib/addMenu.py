@@ -3,9 +3,6 @@ from AppKit import NSApp, NSMenuItem
 from mojo.UI import MenuBuilder
 from lib.UI.fileBrowser import RFPathItem
 
-
-
-
 def add_menu(name, path):
 
     menubar = NSApp().mainMenu()
@@ -13,6 +10,7 @@ def add_menu(name, path):
     if not newItem:
         newItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(name, "", "")
         menubar.insertItem_atIndex_(newItem, menubar.numberOfItems()-1)
+        
     recentList = []
     builder = MenuBuilder([])
     menu = builder.getMenu()

@@ -10,8 +10,7 @@ from collections import OrderedDict
 from pprint import pprint
 from masterTools.misc.drawingTools import _drawBPoints, _drawPoint, _drawLine, _drawPSCurve
 from masterTools.misc.sortingTools import reorderContourToIndex, reorderComponentToIndex
-from defconAppKit.windows.baseWindow import BaseWindowController
-from masterTools.UI.vanillaSubClasses import MTFloatingDialog, MTButton
+from masterTools.UI.vanillaSubClasses import MTButton
 from masterTools.UI.objcBase import MTPopUpButtonMenuItem
 from masterTools.UI.settings import Settings
 from mojo.UI import MenuBuilder
@@ -23,16 +22,16 @@ uiSettingsControler = Settings()
 defaultColors = uiSettingsControler.defaultColors
 '''
     - add component functionality:
-        - component labeling in self.w.canvasView.canvas.list
+        - component labeling in self.view.canvasView.canvas.list
             (add additional row for component)
         - add component max list
         - component drawing
         - component rearranging
-    - add 'glyph is empty label' in self.w.canvasView.canvas
-    - add master name caption in self.w.canvasView.canvas
+    - add 'glyph is empty label' in self.view.canvasView.canvas
+    - add master name caption in self.view.canvasView.canvas
 '''
-        
-class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
+
+class SelectOrder(object):
     title = 'Compatibility Helper'
     key = ''.join(title)
     id = f"com.rafalbuchner.ProblemSolvingTools.{key}"
@@ -46,7 +45,7 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
     margin = 75
     _strokeWidth=2
     selectedContourIndexes = []
-    def __init__(self, designspace):
+    def __init__(self, posSize, designspace):
         self.designspace = designspace
         
         self.uiSettings = uiSettingsControler.getDict()
@@ -54,7 +53,6 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
         if CurrentGlyph() is not None:
             self.letterName = CurrentGlyph().name 
         else:
-            print(self.designspace.getCommonGlyphSet())
             self.letterName = 'K'
         # functionality attrs
         self.reorderingMode ='contours'
@@ -71,38 +69,39 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
                 points=False, stroke=False, fill=True
             )
 
-        self.w = self.window(self.winMinSize, minSize=self.winMinSize, title=self.title ,maxSize=self.winMaxSize,autosaveName=self.id,
-            darkMode=self.uiSettings["darkMode"])
+        self.view = Group(posSize)
         self.initCanvasUI()
         self.initInterfaceUI()
 
 
-        self.w.open()
-        self.w.bind('resize',self.windowResizeCallback)
+    def getView(self):
+        return self.view
     
     def initCanvasUI(self):
         ### CANVAS GROUP
         x,y,p = [self.padding] * 3
         # backgroundColor = AppKit.NSColor.colorWithCalibratedRed_green_blue_alpha_(1,1,1,1)
         backgroundColor = None
-
-        self.w.canvasView = Group((x,0,-300-p,-0))
-        self.w.canvasView.scaleSlider = Slider((0,y,-0,self.btnH),minValue=0.001,maxValue=3,value=self.scale,callback=self.scaleSliderCallback)
-        y += p + self.btnH
+        x = 0
+        self.view.canvasView = Group((x,0,-300-p,-0))
+        self.view.canvasView.scaleSlider = Slider(
+            (0,0,self.txtH,300),minValue=0.001,maxValue=1,value=self.scale,callback=self.scaleSliderCallback)
+        # y += p + self.txtH
+        x += self.txtH
         
-        self.w.canvasView.canvas = Canvas((0, y, -0, -p*2-self.btnH*2-p/2), delegate=self,canvasSize=self.canvasSize,autohidesScrollers=True,backgroundColor=backgroundColor,drawsBackground=True)
+        self.view.canvasView.canvas = Canvas((x, y, -0, -p*2-self.btnH*2-p/2), delegate=self,canvasSize=self.canvasSize,autohidesScrollers=True,backgroundColor=backgroundColor,drawsBackground=True)
         
         colorCell = RFColorCell.alloc().initWithDoubleClickCallback_(self.colorDoubleClickCallback)
         columnDescriptions = [dict(title="element",width=70)]+[dict(title=f"{i}", cell=colorCell, width=20) for i in range(self.maxNumberOfContours)]
         contourRow = {f'{i}' : AppKit.NSColor.colorWithCalibratedRed_green_blue_alpha_(*defaultColors[i],1) for i in range(self.maxNumberOfContours)}
         contourRow['element'] = 'contour'
         listItem = [contourRow]
-        self.w.canvasView.list = List((0,-p-self.btnH*2-p/2,-0,self.btnH*2+p/2),listItem,columnDescriptions=columnDescriptions)
+        self.view.canvasView.list = List((x,-p-self.btnH*2-p/2,-0,self.btnH*2+p/2),listItem,columnDescriptions=columnDescriptions)
     
     def initInterfaceUI(self):
         ### INTERFACE GROUP
         x,y,p = [self.padding] * 3
-        self.w.interfaceView = Group((-300-p,0,-0,-0))
+        self.view.interfaceView = Group((-300-p,0,-0,-0))
         # make it here
         
     def buildRightClickMenu(self):
@@ -244,7 +243,7 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
             if self.selectedContourIndexes.get(masterID) == contourIndex:
                 contourIndex = None
             self.selectedContourIndexes[masterID] = contourIndex
-            self.w.canvasView.canvas.update()
+            self.view.canvasView.canvas.update()
             if len(self.selectedContourIndexes.keys()) >  0:
                 self.orderSelected = True
 
@@ -303,7 +302,7 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
         p=self.padding
 
 
-        x,y = self.w.canvasView.canvas.getNSView().convertPoint_fromView_(event.locationInWindow(),None)
+        x,y = self.view.canvasView.canvas.getNSView().convertPoint_fromView_(event.locationInWindow(),None)
 
         self.cursorLoc = (x*1/self.scale,
                         y*1/self.scale)
@@ -323,7 +322,7 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
         if glyph is not None:
             self.detectClosestElementsAction( glyph)
 
-        self.w.canvasView.canvas.update()
+        self.view.canvasView.canvas.update()
 
 
     def menu(self):
@@ -333,8 +332,8 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
     #     if self.scale + event.deltaY() > 0.001 and self.scale + event.deltaY() < 3 :
     #         print(event)
     #         self.scale += event.deltaY()
-    #         self.w.canvasView.scaleSlider.set(self.scale)
-    #         self.w.canvasView.canvas.update()
+    #         self.view.canvasView.scaleSlider.set(self.scale)
+    #         self.view.canvasView.canvas.update()
     ### Actions
 
 
@@ -406,16 +405,17 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
 
     ### Callbacks
     def windowResizeCallback(self, sender):
-        x,y,w,h = sender.getPosSize()
-        w - self.padding * 2
+        # x,y,w,h = sender.getPosSize()
+        # w - self.padding * 2
+        pass
 
     def colorDoubleClickCallback(self, sender):
-        self.w.canvasView.canvas.getNSView().setFrameSize_(AppKit.NSSize(self.maxGlyphWidth*self.scale, self.columnHeight*self.scale))
+        self.view.canvasView.canvas.getNSView().setFrameSize_(AppKit.NSSize(self.maxGlyphWidth*self.scale, self.columnHeight*self.scale))
 
     def scaleSliderCallback(self, sender):
         self.scale = sender.get()
-        self.w.canvasView.canvas.getNSView().setFrameSize_(AppKit.NSSize(self.maxGlyphWidth*self.scale, self.columnHeight*self.scale))
-        self.w.canvasView.canvas.update()
+        self.view.canvasView.canvas.getNSView().setFrameSize_(AppKit.NSSize(self.maxGlyphWidth*self.scale, self.columnHeight*self.scale))
+        self.view.canvasView.canvas.update()
 
     def chooseElementOrderCallback(self,sender):
         newIndex = int(sender.title())
@@ -433,7 +433,7 @@ class ManualCompatibilityHelper(MTFloatingDialog, BaseWindowController):
         self.__letterName = letterName
         self.computeGlyphInfo()
         if hasattr(self, 'w'):
-            self.w.canvasView.canvas.update()
+            self.view.canvasView.canvas.update()
 
 
 if __name__=='__main__':
@@ -443,4 +443,4 @@ if __name__=='__main__':
     designspace.read(dsPath)
     designspace.loadFonts()
 
-    testObj = ManualCompatibilityHelper( designspace=designspace )
+    testObj = SelectOrder( designspace=designspace )
