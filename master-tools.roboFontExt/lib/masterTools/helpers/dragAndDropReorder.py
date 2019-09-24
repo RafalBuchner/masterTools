@@ -173,39 +173,50 @@ class DragAndDropReorder(MTDialog):
             if self.draggedItemInfo is not None:
                 _elementType, _id, draggedItem, fontname, draggedIndexes = self.draggedItemInfo
                 if _elementType != sender.elementType:
+                    print('manualCompatiblity> cannot replace indexes of different types of elements')
                     return True
-                draggedList = getattr(self, f'obj_index_{_id}').list
+                if _elementType == 'contour':
+                    draggedList = getattr(self, f'obj_index_{_id}').list
+                else:
+                    draggedList = getattr(self, f'obj_component_{_id}').list
                 draggedItems = draggedList.get()
 
                 dropItems = sender.get()
                 dropId = sender.id
+
+                # replacing:
+
                 itemToReplace = None
                 for item in dropItems:
                     if item['fontName'] == fontname:
                         itemToReplace = item
-                dropItemsNew = []
-                for i,item in enumerate(dropItems):
-                    if i not in draggedIndexes:
-                        dropItemsNew += [item]
-                    else:
-                        dropItemsNew += [draggedItem]
+
+
+                # replacing element in dragged list
                 draggedItemsNew = []
-                sender.set(dropItemsNew)
                 for i,item in enumerate(draggedItems):
                     if i not in draggedIndexes:
                         draggedItemsNew += [item]
                     else:
                         draggedItemsNew += [itemToReplace]
 
-                # print(draggedItemsNew)
                 draggedList.set(draggedItemsNew)
-                # dropItems.replace
+
+                # replacing element in drop list
+                dropItemsNew = []
+                for i,item in enumerate(dropItems):
+                    if i not in draggedIndexes:
+                        dropItemsNew += [item]
+                    else:
+                        dropItemsNew += [draggedItem]
+
+                sender.set(dropItemsNew)
+                print(dropItems==dropItemsNew)
+
+
+
                 self.draggedItemInfo = None
 
-            # test = []
-            # for item in self.draggedItems:
-            #     if item not in test:
-            #         test += [item]
             return True
         return True
 
