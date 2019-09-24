@@ -104,7 +104,7 @@ class MasterToolsProcessor(DesignSpaceProcessor):
     def getCommonGlyphSet(self):
         glyphSet = []
         for item in self.fontMasters:
-            glyphSet += [item['font'].glyphOrder]
+            glyphSet += list(item['font'].glyphOrder)
         glyphSet = list(set(glyphSet))
         glyphSet.sort()
         return glyphSet

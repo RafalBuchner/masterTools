@@ -208,7 +208,11 @@ class MTGlyphPreview(Box):
         for axisname in loc:
             self.lastAllLocations[axisname] = loc[axisname]
         self.updateInfo()
-        self.glyphView.setGlyph(self._getInterpolation(name,self.lastAllLocations))
+        try:
+            self.interpolationProblemMessage.show(False)
+            self.glyphView.setGlyph(self._getInterpolation(name, self.lastAllLocations))
+        except:
+            self.interpolationProblemMessage.show(True)
 
     def _updateSliders(self):
         if hasattr(self, "sliderItems"):
@@ -496,6 +500,14 @@ class MTDialog(object):
     window = MTWindowWrapper
     settingsSheet = MTSheet
     toolbar = MTToolbar
+    def __init__(self):
+        self.w = None
+        addObserver(self, 'closeDialogWithDesignSpaceWindow', 'MT.designspacewindow.windowClosed') # description
+
+    def closeDialogWithDesignSpaceWindow(self, sender):
+        self.w.close()
+
+
 class MTFloatingDialog(object):
     """
     in subclass you have to describe self.w as instance of MTWindowWrapper (you can use class attr window for it)
@@ -506,6 +518,12 @@ class MTFloatingDialog(object):
     window = MTFloatingWindowWrapper
     settingsSheet = MTSheet
     toolbar = MTToolbar
+    def __init__(self):
+        self.w = None
+        addObserver(self, 'closeDialogWithDesignSpaceWindow', 'MT.designspacewindow.windowClosed') # description
+
+    def closeDialogWithDesignSpaceWindow(self, sender):
+        self.w.close()
 
 
 class MTList(List):

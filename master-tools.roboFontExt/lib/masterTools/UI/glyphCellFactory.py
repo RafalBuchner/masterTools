@@ -195,7 +195,7 @@ class GlyphCellFactoryDrawingController(object):
             componentsIndexesAndColors = self.selectionWithColor.get('components')
             if componentsIndexesAndColors is not None:
                 for componentIndex in componentsIndexesAndColors:
-                    color = componentsIndexesAndColors[contourIndex]
+                    color = componentsIndexesAndColors[componentIndex]
                     color.set()
                     path = self.glyph.components[componentIndex].getRepresentation("defconAppKit.NSBezierPath")
                     path.fill()

@@ -86,6 +86,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
         # tools inits as None:
         self.toolObjects = []
+        self.openedDialogs = []
         self.compatibilityTableTool = None
         self.kinkManagerTool = None
         self.incompatibleGlyphsBrowserTool = None
@@ -173,7 +174,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.w.bind("close", self.closeDesignSpaceMainWindow)
         self.w.bind("resize", self.resizeDesignSpaceMainWindow)
 
-        self.initDesignSpaceIfNeeded(designSpacePath)
+        # self.initDesignSpaceIfNeeded(designSpacePath)
 
         self.w.open()
 
@@ -211,7 +212,10 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
             tools = dict(
                     ManualCompatibilityHelper=ManualCompatiblityHelper
                 )
-            OpenWindow(tools[sender.toolName](self.designspace))
+            chosenTool = tools[sender.toolName]
+            from pydoc import help
+            OpenWindow(chosenTool,self.designspace)
+
 
         x,y,p = self.padding
         self.helpersPane = Group((0, 0, -0, -0))
@@ -450,6 +454,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         removeObserver(self, "fontWillClose")
         removeObserver(self, "fontBecameCurrent")
         self.glyphPane.prev.mainWindowClose()
+        publishEvent('MT.designspacewindow.windowClosed') # description
 
         for tool in self.toolObjects:
             if tool.isActive:
@@ -485,9 +490,9 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
                 fontTable.setRowHeight_(bigRowHeight)
                 fontTable.sizeToFit()
             else:
-                if self.fontPane.openDesignSpaceButton.getTitle() != 'open in editor':
-                    self.fontPane.openDesignSpaceButton.setPosSize((-110-p, y,110,self.txtH))
-                    self.fontPane.openDesignSpaceButton.setTitle('open in editor')
+                if self.fontPane.openDesignSpaceButton.getTitle() != 'open':
+                    self.fontPane.openDesignSpaceButton.setPosSize((-50-p, y,50,self.txtH))
+                    self.fontPane.openDesignSpaceButton.setTitle('open')
                 self.glyphExampleColumn.setResizable_(False)
                 self.glyphExampleColumn.setMaxWidth_(60)
                 self.glyphExampleColumn.setMinWidth_(60)

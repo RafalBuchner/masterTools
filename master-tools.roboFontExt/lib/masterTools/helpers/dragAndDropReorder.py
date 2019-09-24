@@ -15,7 +15,7 @@ class DragAndDropReorder(MTDialog):
     def __init__(self, possize, designspace):
         self.designspace = designspace
         self.draggedItemInfo = None
-        self.glyphName = 'K'
+        self.glyphName = 'A'
 
 
         self.listview = Group(possize)
@@ -32,27 +32,33 @@ class DragAndDropReorder(MTDialog):
     def setItems(self):
         maxNumOfComponents = self.designspace.getMaxNumberOfComponentsInDesignSpace_forGlyph(self.glyphName)
         maxNumOfContours = self.designspace.getMaxNumberOfContoursInDesignSpace_forGlyph(self.glyphName)
-        maxNumOfElements = maxNumOfContours
-        if maxNumOfComponents > maxNumOfContours:
-            maxNumOfElements = maxNumOfComponents
+        maxNumOfElements = maxNumOfComponents + maxNumOfContours
         columnWidth = 100
         
-        self.items = [[] for i in range(maxNumOfElements)]
-
+        # self.items = [[] for i in range(maxNumOfElements)]
+        contoursItems   = [[] for i in range(maxNumOfContours)]
+        componentsItems = [[] for i in range(maxNumOfComponents)]
+        descriptionItems = []
         for masterItem in self.designspace.fontMasters:
             font = masterItem['font']
             glyph = font[self.glyphName]
+            descriptionItems += [dict(fontName=masterItem['fontname'])]
+
             for _element in [glyph.contours, glyph.components]:
                 if _element == glyph.contours:
                     _element_name = 'contours'
-                else: _element_name = 'components'
+                    items = contoursItems
+                else: 
+                    _element_name = 'components'
+                    items = componentsItems
                 for index in range(len(_element)):
                     selectionWithColor = {
                             _element_name:{index:NSColor.cyanColor()}
                         }
                     if index < len(_element):
-                        self.items[index] += [dict(glyph=GlyphCellFactoryWithNotDef(
-                                glyph.name,glyph.font, 240, 240, glyphColor=glyphColor, selectionWithColor=selectionWithColor),fontName=masterItem['fontname']
+                        items[index] += [dict(glyph=GlyphCellFactoryWithNotDef(
+                                glyph.name,glyph.font, 240, 240, glyphColor=glyphColor, selectionWithColor=selectionWithColor),fontName=masterItem['fontname'], 
+                                glyphObj=glyph
                                 )]
 
         fontListColumnDescriptions = [
@@ -64,8 +70,9 @@ class DragAndDropReorder(MTDialog):
         descriptionView = Group((0,0,-0,-0))
         descriptionView.title = TextBox((x,y,-p,self.txtH),f"master",alignment='center')
         y += self.txtH + p
+
         descriptionView.list = MTList((x,y,-0,-0),
-                    self.items[0],
+                    descriptionItems,
                     rowHeight=columnWidth,
                     showColumnTitles=False,
                     columnDescriptions=descriptionColumnDescriptions,
@@ -75,16 +82,6 @@ class DragAndDropReorder(MTDialog):
 
         self.paneDescriptors=[dict(view=descriptionView,identifier=f"description")]
         setattr(self, f'obj_description', descriptionView)
-        # Doesn't work :(
-        # descriptionView.list.getNSScrollView().contentView().setPostsBoundsChangedNotifications_(1)
-        # self.notifiactionCenter = NSNotificationCenter.defaultCenter()
-        # self.viewBoundsDidChange_selector = objc.selector(self.viewBoundsDidChange_,signature=b'v@:')
-        # self.notifiactionCenter.addObserver_selector_name_object_(
-        #     self,
-        #     b'viewBoundsDidChange:',
-        #     # self.viewBoundsDidChange_selector,
-        #     NSViewBoundsDidChangeNotification,
-        #     descriptionView.list.getNSScrollView().contentView())
 
         selfWindowDropSettings = dict(type=genericListPboardType,
                         allowDropOnRow=True,
@@ -95,10 +92,10 @@ class DragAndDropReorder(MTDialog):
                         allowDropOnRow=True,
                         allowDropBetweenRows=False,
                         callback=self.dragCallback)
-        for i in range(maxNumOfElements):
+        for i in range(maxNumOfContours):
             y = 10
             
-            _items = self.items[i]
+            _items = contoursItems[i]
             view = Group((0,0,-0,-0))
             view.title = TextBox((x,y,-p,self.txtH),f"index {i}",alignment='center')
             y += self.txtH + p
@@ -117,26 +114,43 @@ class DragAndDropReorder(MTDialog):
             _id = f"index_{i}"
             view.list.setSelection([])
             view.list.id = i
+            view.list.elementType = 'contour'
             setattr(self, f'obj_{_id}', view)
 
             self.paneDescriptors += [dict(view=view,identifier=_id)]
-            # Doesn't work :(
-            # view.list.getNSScrollView().contentView().setPostsBoundsChangedNotifications_(1)
-            # self.notifiactionCenter.addObserver_selector_name_object_(
-            #     self,
-            #     b'viewBoundsDidChange:',
-            #     AppKit.NSViewBondsDidChangeNotification,
-            #     view.list.getNSScrollView().contentView())
+
+        for i in range(maxNumOfComponents):
+            y = 10
+            
+            _items = componentsItems[i]
+            view = Group((0,0,-0,-0))
+            view.title = TextBox((x,y,-p,self.txtH),f"component {i}",alignment='center')
+            y += self.txtH + p
+            view.list = MTList(
+                        (0,y,-0,-0),
+                        _items,
+                        columnDescriptions=fontListColumnDescriptions,
+                        rowHeight=columnWidth,
+                        showColumnTitles=False,
+                        allowsMultipleSelection=False,
+                        transparentBackground=True,
+                        selfWindowDropSettings=selfWindowDropSettings,
+                        dragSettings=dragSettings, 
+                        selectionCallback=self.selectionCallback,
+                )
+            _id = f"component_{i}"
+            view.list.setSelection([])
+            view.list.id = i
+            view.list.elementType = 'component'
+            setattr(self, f'obj_{_id}', view)
+
+            self.paneDescriptors += [dict(view=view,identifier=_id)]
+
         if hasattr(self.listview, 'columns'):
             del self.listview.columns
         self.listview.columns = SplitView((0, 0, -0, -0), 
             self.paneDescriptors, dividerStyle='thin'
             )
-
-    # def viewBoundsDidChange_(self, bounds):
-    # # Doesn't work :(
-    # this method supposed to make sure that all scrolls are at the same line
-    #     pass
 
     def selectionCallback(self, sender):
         selectionID = sender.getSelection()
@@ -151,14 +165,15 @@ class DragAndDropReorder(MTDialog):
 
 
     def dragCallback(self, sender, indexes):
-        print(sender.id, sender.get()[indexes[0]]['fontName']) #!!!!
-        self.draggedItemInfo = (sender.id, sender.get()[indexes[0]] ,sender.get()[indexes[0]]['fontName'], indexes)
+        self.draggedItemInfo = (sender.elementType, sender.id, sender.get()[indexes[0]] ,sender.get()[indexes[0]]['fontName'], indexes)
 
     def selfDropCallback(self, sender, dropInfo):
         isProposal = dropInfo["isProposal"]
         if not isProposal:
             if self.draggedItemInfo is not None:
-                _id, draggedItem, fontname, draggedIndexes = self.draggedItemInfo
+                _elementType, _id, draggedItem, fontname, draggedIndexes = self.draggedItemInfo
+                if _elementType != sender.elementType:
+                    return True
                 draggedList = getattr(self, f'obj_index_{_id}').list
                 draggedItems = draggedList.get()
 

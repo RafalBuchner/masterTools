@@ -231,8 +231,6 @@ class SelectOrder(object):
             translate(0,height)
         restore()
 
-    
-
     def mouseDown(self,event):
         masterID, _, _ = self.currentLocOnMaster
 
