@@ -1,12 +1,10 @@
-from AppKit import NSColor, NSViewBoundsDidChangeNotification, NSNotificationCenter
-import AppKit
-from pprint import pprint
-from copy import deepcopy
-import objc
 from masterTools.UI.glyphCellFactory import GlyphCellFactoryWithNotDef
 from masterTools.UI.vanillaSubClasses import MTDialog, MTList, MTVerticallyCenteredTextFieldCell
-from vanilla import *
 from masterTools.UI.settings import Settings
+from masterTools.misc.sortingTools import rearrangeOrder
+from AppKit import NSColor, NSDragOperationCopy
+from pprint import pprint
+from vanilla import *
 
 uiSettingsController = Settings()
 glyphColor = uiSettingsController.getGlyphColor_forCurrentMode()
@@ -16,7 +14,6 @@ class DragAndDropReorder(MTDialog):
         self.designspace = designspace
         self.draggedItemInfo = None
         self.glyphName = 'A'
-
 
         self.listview = Group(possize)
         self.listview = self.listview
@@ -58,7 +55,7 @@ class DragAndDropReorder(MTDialog):
                     if index < len(_element):
                         items[index] += [dict(glyph=GlyphCellFactoryWithNotDef(
                                 glyph.name,glyph.font, 240, 240, glyphColor=glyphColor, selectionWithColor=selectionWithColor),fontName=masterItem['fontname'], 
-                                glyphObj=glyph
+                                glyphObj=glyph, initialIndex=index
                                 )]
 
         fontListColumnDescriptions = [
@@ -86,7 +83,7 @@ class DragAndDropReorder(MTDialog):
         selfWindowDropSettings = dict(type=genericListPboardType,
                         allowDropOnRow=True,
                         allowDropBetweenRows=False,
-                        operation=AppKit.NSDragOperationCopy,
+                        operation=NSDragOperationCopy,
                         callback=self.selfDropCallback)
         dragSettings = dict(type=genericListPboardType,
                         allowDropOnRow=True,
@@ -211,15 +208,54 @@ class DragAndDropReorder(MTDialog):
                         dropItemsNew += [draggedItem]
 
                 sender.set(dropItemsNew)
-                print(dropItems==dropItemsNew)
-
-
 
                 self.draggedItemInfo = None
+
+                # reordering in data structure
+                self.reorderAndSave()
 
             return True
         return True
 
+    def reorderAndSave(self):
+        # dividing data to different element types: contours and components
+        elementTypeToDataFromLists = {}
+        for item in self.paneDescriptors[1:]:
+
+            _list = item['view'].list
+            if _list.elementType not in elementTypeToDataFromLists.keys():
+                elementTypeToDataFromLists[_list.elementType] = []
+            elementTypeToDataFromLists[_list.elementType] += [_list]
+
+        # segregating indexing by each master-glyph
+        for elementType in elementTypeToDataFromLists:
+            glyphToNewIndexOrder = {}
+            lists = elementTypeToDataFromLists[elementType]
+            for _list in lists:
+                orderInfo = _list.get()
+                for info in orderInfo:
+                    if info['glyphObj'] not in glyphToNewIndexOrder.keys():
+                        glyphToNewIndexOrder[info['glyphObj']] = []
+                    glyphToNewIndexOrder[info['glyphObj']].append(info['initialIndex'])
+
+            # actual reordering
+            for glyph in glyphToNewIndexOrder:
+                newIndexes = glyphToNewIndexOrder[glyph]
+                if elementType == 'contour':
+                    rearrangeOrder(glyph, newContourIndexes=newIndexes,newComponentIndexes=None)
+                else:
+                    rearrangeOrder(glyph, newContourIndexes=None,newComponentIndexes=newIndexes)
+                glyph.changed()
+
+                # saving (if font is not opened in RF, save the changes)
+                if not glyph.font.hasInterface():
+                    glyph.font.save()
+
+        # reset stuff in the lists
+        self.setItems()
+
+
+            
 def main():
     dsPath = '../../test_designSpace/mutatorSans-master/MutatorSans.designspace'
     designspace = MasterToolsProcessor()

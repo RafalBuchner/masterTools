@@ -19,6 +19,7 @@ class SortingPen(AbstractPointPen):
         pass
 
     def sortContoursByIndexes(self, indexes):
+        print(len(indexes) == len(self._contours),len(indexes),len(self._contours))
         assert len(indexes) == len(self._contours), 'number of indexes should be the same as contours'
         assert all(isinstance(x, int) for x in indexes), 'all indexes should be intigers'
         
@@ -36,7 +37,7 @@ class SortingPen(AbstractPointPen):
             components_ += [self._components[i]]
         self._components = components_
 
-def rearrangeOrder(glyph, contourIndexes=None,componentIndexes=None,):
+def rearrangeOrder(glyph, newContourIndexes=None,newComponentIndexes=None,):
     '''
         map current contours or components 
         with given arrays of reordered indexes
@@ -45,10 +46,10 @@ def rearrangeOrder(glyph, contourIndexes=None,componentIndexes=None,):
     pen = SortingPen()
     glyph.drawPoints(pen)
     pointPen = glyph.getPointPen()
-    if contourIndexes is not None:
-        pen.sortContoursByIndexes(contourIndexes)
-    if componentIndexes is not None:
-        pen.sortComponentsByIndexes(componentIndexes)
+    if newContourIndexes is not None:
+        pen.sortContoursByIndexes(newContourIndexes)
+    if newComponentIndexes is not None:
+        pen.sortComponentsByIndexes(newComponentIndexes)
     glyph.clear()
     
     for contour in pen._contours:
@@ -63,9 +64,9 @@ def rearrangeOrder(glyph, contourIndexes=None,componentIndexes=None,):
 def reorderContourToIndex(glyph, oldContourIndex, toNewIndex):
     indexOrder = list(range(len(glyph.contours)))
     indexOrder.insert(toNewIndex, indexOrder.pop(oldContourIndex))
-    rearrangeOrder(glyph,contourIndexes=indexOrder)
+    rearrangeOrder(glyph,newContourIndexes=indexOrder)
 
 def reorderComponentToIndex(glyph, oldComponentIndex, toNewIndex):
     indexOrder = list(range(len(glyph.components)))
     indexOrder.insert(toNewIndex, indexOrder.pop(oldComponentIndex))
-    rearrangeOrder(glyph,componentIndexes=indexOrder)
+    rearrangeOrder(glyph,newComponentIndexes=indexOrder)

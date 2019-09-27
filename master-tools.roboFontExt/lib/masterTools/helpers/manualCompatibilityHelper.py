@@ -6,6 +6,7 @@ from mojo.events import addObserver, removeObserver
 from masterTools.UI.vanillaSubClasses import MTDialog
 from defconAppKit.windows.baseWindow import BaseWindowController
 from mojo.roboFont import CurrentGlyph, CurrentFont
+from mojo.UI import AccordionView
 from masterTools.UI.settings import Settings
 uiSettingsControler = Settings()
 
@@ -21,37 +22,33 @@ class ManualCompatiblityHelper(MTDialog, BaseWindowController):
     padding = 10
     def __init__(self, designspace):
         super().__init__()
-        self.designspace = designspace
-        self.dragAndDropReorder = DragAndDropReorder((0,0,-0,-0),designspace)
-        
-        self.selectOrder = SelectOrder((0,0,-0,-0),designspace)
 
-        x,y,p = [self.padding] * 3
+        # setup data:
+        self.designspace = designspace
+
         glyphname = None
         if CurrentGlyph():
             glyphname = CurrentGlyph().name
         else: glyphname = designspace.getCommonGlyphSet()[0]        
 
+        # setup UI:
+        x,y,p = [self.padding] * 3
         self.uiSettings = uiSettingsControler.getDict()
         self.w = self.window(self.winMinSize, minSize=self.winMinSize, title=self.title ,maxSize=self.winMaxSize,autosaveName=self.id,
             darkMode=self.uiSettings["darkMode"])
-        # self.w.dragAndDropReorder = DragAndDropReorder((0,0,-0,-0),designspace)
         self.w.info = Box((10,10,-10,80))
         self.w.info.glyphnameTxtBox = TextBox((x,y,-p,self.txtH), f'glyph name: {glyphname}')
-        self.w.tabs = Tabs((10, 90, -10, -10), [ "order contours",
-            # "ordering pointer",
-            ],sizeStyle='mini')
-        tab1 = self.w.tabs[0]
-        tab1.dragAndDropReorderView = self.dragAndDropReorder.getView()
-        # tab2 = self.w.tabs[1]
-        # tab2.view = self.selectOrder.getView()
         
+        self.createAccordionView()
         self.updateGlyph(glyphname)
-        self.dragAndDropReorder.updateGlyph(glyphname)
-
         self.w.open()
+        
+        # add observers:
         addObserver(self, 'currentGlyphChangedCallback', 'currentGlyphChanged')
+
         self.setUpBaseWindowBehavior()
+
+        # set up keystroke monitor:
         bindings = {
             (',',):self.changeCurrentGlyphBackward,
             ('.',):self.changeCurrentGlyphForward,
@@ -59,15 +56,23 @@ class ManualCompatiblityHelper(MTDialog, BaseWindowController):
         self.keyEventMonitor = KeyEventMonitor(bindings)
         self.keyEventMonitor.subscribe()
 
+    def createAccordionView(self):
+        self.dragAndDropReorder = DragAndDropReorder((0,0,-0,-0),self.designspace)
+        contourOrder = Box((10, 10, -10, -10))
+        contourOrder.dragAndDropReorderView = self.dragAndDropReorder.getView()
+        
+        descriptions =[
+                    dict(label="contour and component order", view=contourOrder, size=200, collapsed=False, canResize=True),
+                    ]
+        self.w.accordionView = AccordionView((0, 100, -0, -0), descriptions)
+
 
 
     #  BASE EVENT CONTROLLER BINDINGS  
     def windowSelectCallback(self, sender):
-        print('subscribe')
         self.keyEventMonitor.subscribe()
 
     def windowDeselectCallback(self, sender):
-        print('unsubscribe')
         self.keyEventMonitor.unsubscribe()
 
     def windowCloseCallback(self, sender):
@@ -78,6 +83,7 @@ class ManualCompatiblityHelper(MTDialog, BaseWindowController):
     # KEY EVENT CONTROLLER BINDINGS
     def changeCurrentGlyphForward(self, keystroke):
         self.changeCurrentGlyph( 1)
+        
     def changeCurrentGlyphBackward(self, keystroke):
         self.changeCurrentGlyph( -1)
 

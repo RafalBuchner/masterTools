@@ -222,10 +222,10 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         self.helpersPane.caption = TextBox((x, y, 150,self.txtH), "helpers")
         y = self.txtH + p + p
         self.helpersPane.openInDSeditorBtn = MTButton((x,y,100,self.btnH), 'open in editor', callback=self.openDesignSpaceEditorCallback)
-        y += self.btnH + p
-        self.helpersPane.manualCompatibilityHelperBtn = MTButton((x,y,100,self.btnH), 'manual reordering (wip)', callback=_btnCallback)
+        y += self.btnH + p/2
+        self.helpersPane.manualCompatibilityHelperBtn = MTButton((x,y,100,self.btnH), 'manual reordering', callback=_btnCallback)
         self.helpersPane.manualCompatibilityHelperBtn.toolName = 'ManualCompatibilityHelper'
-        y += self.btnH + p
+        y += self.btnH + p/2
         self.helpersPaneHeight = y
         self.helpersPaneMinHeight = self.txtH + p * 2
 

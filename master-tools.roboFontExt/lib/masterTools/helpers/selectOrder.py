@@ -388,6 +388,7 @@ class SelectOrder(object):
             reorderFunction = reorderContourToIndex
         elif self.reorderingMode == 'components':
             reorderFunction = reorderComponentToIndex
+
         for _id in self.selectedContourIndexes:
             font = self.designspace.fontsById[_id]
             glyph = font[self.letterName]
@@ -395,11 +396,7 @@ class SelectOrder(object):
             if oldIndex is not None:
                 reorderFunction(glyph, oldIndex, newIndex)
             self.selectedContourIndexes[_id] = None
-            # if not font.hasInterface():
-            #     help(font)
-            #     font_savingObj = RFont(font,False)
-            #     font_savingObj.save(font.path)
-            #     font_savingObj.close()
+
 
     ### Callbacks
     def windowResizeCallback(self, sender):
