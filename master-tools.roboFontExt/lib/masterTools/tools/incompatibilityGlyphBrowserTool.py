@@ -156,7 +156,19 @@ class IncompatibleGlyphsBrowser(MTFloatingDialog, BaseWindowController):
             height = len(problems.split('\n')) * self.txtH + p*2
             index = sender.getSelection()[0]
             relativeRect = sender.getNSTableView().rectOfRow_(index)
-            # relativeRect.origin.y += 22
+            # offset = sender.getNSScrollView().documentView().frame().size.height
+            # offset -= sender.getNSScrollView().documentView().frame().size.height*sender.getNSScrollView().verticalScroller().floatValue()
+            # offset = sender.getNSScrollView().documentView().frame().size.height%height*sender.getNSScrollView().verticalScroller().floatValue()
+            # offset = sender.getNSScrollView().frame().size.height*sender.getNSScrollView().verticalScroller().floatValue()
+            # offset = (sender.getNSScrollView().contentView().frame().size.height+sender.getNSScrollView().frame().size.height*sender.getNSScrollView().verticalScroller().floatValue())-sender.getNSScrollView().frame().size.height
+            offset = sender.getNSScrollView().contentView().documentVisibleRect().origin.y
+            relativeRect.origin.y -= offset
+            # relativeRect.origin.y += offset
+            print('&&&&&&&&&&&&&&&&')
+            print(sender.getNSScrollView().contentView().documentVisibleRect())
+            # print(offset)
+            # print(relativeRect, sender.getNSScrollView().documentView().frame())
+
             self.pop = Popover((400, height), behavior='transient')
             self.pop.text = TextBox((x, y, -p, -p), problems)
             self.pop.open(parentView=sender, preferredEdge='right', relativeRect=relativeRect)

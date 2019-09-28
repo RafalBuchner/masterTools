@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <glyph name="X" format="2">
   <advance width="400"/>
   <unicode hex="0058"/>
@@ -13,6 +14,7 @@
     <contour>
       <point x="20" y="0" type="line"/>
       <point x="60" y="0" type="line"/>
+      <point x="174" y="267" type="line"/>
       <point x="202" y="332" type="line"/>
       <point x="215" y="336" type="line"/>
       <point x="370" y="700" type="line"/>

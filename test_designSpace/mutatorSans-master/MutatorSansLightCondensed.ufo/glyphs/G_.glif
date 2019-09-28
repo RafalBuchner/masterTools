@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <glyph name="G" format="2">
   <advance width="509"/>
   <unicode hex="0047"/>
@@ -20,8 +21,11 @@
       <point x="152" y="26"/>
       <point x="90" y="104"/>
       <point x="90" y="352" type="curve" smooth="yes"/>
-      <point x="90" y="599"/>
-      <point x="161" y="674"/>
+      <point x="90" y="406"/>
+      <point x="93" y="453"/>
+      <point x="100" y="491" type="curve" smooth="yes"/>
+      <point x="122" y="628"/>
+      <point x="182" y="674"/>
       <point x="255" y="674" type="curve" smooth="yes"/>
       <point x="266" y="674" type="line" smooth="yes"/>
       <point x="348" y="674"/>
