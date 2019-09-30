@@ -358,7 +358,15 @@ def calcLine(t, *pointList):
 
     return x, y
 
-
+def rgbaInterpolation(rgba1, rgba2, t):
+    r,g,b,a = rgba1
+    r2,g2,b2,a2 = rgba2
+    _r = interpolation(r, r2, t)
+    _g = interpolation(g, g2, t)
+    _b = interpolation(b, b2, t)
+    _a = interpolation(a, a2, t)
+    return _r,_g,_b,_a
+    
 def interpolation(v1, v2, t):
     """one-dimentional bezier curve equation for interpolating"""
     vt = v1 * (1 - t) + v2 * t

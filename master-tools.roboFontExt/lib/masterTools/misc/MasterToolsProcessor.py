@@ -3,6 +3,7 @@ from ufoProcessor import *
 from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import *
 from pprint import pprint
+from collections import OrderedDict
 # from mojo.roboFont import AllFonts, RFont, OpenFont
 
 class MasterToolsProcessor(DesignSpaceProcessor):
@@ -76,7 +77,7 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def _setFontMasters(self):
         self.fontMasters = []
-        self.fontsById = {}
+        self.fontsById = OrderedDict()
         for info in self.getFonts():
             font = info[0]
             fontname = os.path.relpath(font.path, self.path)

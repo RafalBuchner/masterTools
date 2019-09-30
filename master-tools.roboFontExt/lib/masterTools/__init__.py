@@ -12,7 +12,7 @@ if __name__ == '__main__':
     from lib.UI.fileBrowser import RFPathItem
     from mojo.roboFont import OpenWindow
     currpath = os.path.join( os.path.dirname( __file__ ), '..' )
-    sys.path.append(currpath)
+    sys.path.append( currpath )
     sys.path = list(set(sys.path))
     pathForBundle = os.path.abspath(os.path.join(__file__ ,"../../.."))    ####
     from masterTools.UI.designSpaceWindow import DesignSpaceWindow

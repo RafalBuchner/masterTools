@@ -2,9 +2,11 @@
 from vanilla import *
 from defconAppKit.windows.baseWindow import BaseWindowController
 from mojo.events import addObserver, removeObserver, publishEvent
-from mojo.drawingTools import *
+import mojo.drawingTools as dt
 from mojo.roboFont import CurrentGlyph, CurrentFont
 import math
+import statistics
+from pprint import pprint
 from mojo.canvas import CanvasGroup
 
 from defconAppKit.windows.baseWindow import BaseWindowController
@@ -13,41 +15,71 @@ from masterTools.UI.settings import Settings
 from masterTools.UI.vanillaSubClasses import MTList,  MTFloatingDialog
 import masterTools.misc.countPoints as countPoints
 from masterTools.misc.MTMath import *
+from masterTools.misc.RBMath import rgbaInterpolation
 
-class KinkingCanvas(CanvasGroup):
+# def average(lst):
+#     if len(lst) == 0:
+#         return 0
+#     return sum(lst) / len(lst)
+
+# def averageDeviation(lst):
+#     _average = average(lst)
+#     _sum = sum([n - _average for n in lst])
+#     if len(lst) == 0:
+#         return 0
+#     deviation = _sum/len(lst)
+#     return deviation
+    
+def mad(a, axis=None):
+    """
+    Compute *Median Absolute Deviation* of an array along given axis.
+    """
+
+    # Median along given axis, but *keeping* the reduced axis so that
+    # result can still broadcast against a.
+    med = N.median(a, axis=axis, keepdims=True)
+    mad = N.median(N.absolute(a - med), axis=axis)  # MAD along given axis
+
+    return mad
+
+
+class KinkingCanvas(object):
     def __init__(self, posSize, kManager):
-        super().__init__(posSize, self)
+        self.canvas = CanvasGroup(posSize, self)
         self.posSize = posSize
         self.kManager = kManager
+
         addObserver(self, 'kinkManagerChanged', 'mt.KinkManager.changed') # description
+
+    def getCanvas(self):
+        return self.canvas
 
     def kinkManagerChanged(self,data):
         self.kManager = data['data']
-        self.draw()
+        self.canvas.update()
 
     def draw(self):
         def _drawLinePoint(p,s,color,shift=0):
             x,y=p
-            save()
-            stroke(*color)
-            translate(x,y)
-            line((0,s/2-shift),(0,-s/2-shift))
-            restore()
+            dt.save()
+            dt.stroke(*color)
+            dt.translate(x,y)
+            dt.line((0,s/2-shift),(0,-s/2-shift))
+            dt.restore()
 
         def _drawPoint(p,s,color):
             x,y=p
-            save()
-            stroke(None)
-            fill(*color)
-            translate(x,y)
-            oval(-s/2,-s/2,s,s)
-            restore()
+            dt.save()
+            dt.stroke(None)
+            dt.fill(*color)
+            dt.translate(x,y)
+            dt.oval(-s/2,-s/2,s,s)
+            dt.restore()
 
 
         if  self.kManager.selectedInfo is not None:
             accuracyAngle = 2 # IMPORTANT, you should make a slider, or combobox
             accuracyRatio = 3
-            scale = 1
             selectedInfo = self.kManager.selectedInfo
             bPoint = selectedInfo[0][1]
             pointIn = selectedInfo[0][0]
@@ -55,49 +87,47 @@ class KinkingCanvas(CanvasGroup):
             angleBp = selectedInfo[1]
             ratioInBP = selectedInfo[2][0]
 
-
+            color = rgbaInterpolation(self.kManager.greenColor,self.kManager.redColor,self.kManager.ratioAverageDeviation)
             for index, info in enumerate(self.kManager.bPointsInfo):
-                
                 angle = info[1]
-                # if round(angle,accuracyAngle) == round(angleBp,accuracyAngle):
-                #     color = [0,0.9,0.5,.4]
-                #     angle = angleBp-2*math.pi
-                # else:
-                color = (1,0.1,0,.4)
-
-                # _drawAngle(bPoint,pointIn,pointOut)
-
-                # draw ratio
-                # x,y = bPoint
-
-                shift = 30*scale
-                shift_offset = shift
-                x,y = (self.getNSView().frame().size.width/2,shift*index+shift_offset)
-                # _drawLinePoint((x,y),10*scale,color)
+                glyph = self.kManager.designspace.fontMasters[index]['font'][self.kManager.glyph.name]
                 
-                # ratioIn,ratioOut = info[2]
+                shift = 30
+                shift_offset = shift
+                top = self.canvas.getNSView().bounds().size.height - shift*index-shift_offset
+                # top = shift*index+shift_offset
+                x,y = (self.canvas.getNSView().frame().size.width/2,top)
 
-                unit = 120
+                dt.save()
+                dt.translate(15,y-3)
+                dt.scale(.02)
+                dt.translate((50-glyph.width)/2+glyph.leftMargin,0)
+                dt.drawGlyph(glyph)
+                dt.restore()
+                
+                ratioIn,ratioOut = info[2]
+
+                unit = self.canvas.getNSView().frame().size.width-60
                 lengthOfLine = unit
                 A,B = ((x-lengthOfLine/2,y),(x+lengthOfLine/2,y))
-
-                strokeWidth(3*scale)
-                stroke(*color)
-
-                _drawLinePoint(A,10*scale,color)
-                _drawLinePoint(B,10*scale,color)
-                line(A,B)
-                _drawLinePoint(((ratioIn*unit-unit/2)*scale,y),16*scale,color)
-
+                dt.save()
+                dt.strokeWidth(3)
+                dt.stroke(*color)
+                dt.translate(18)
+                _drawLinePoint(A,10,color)
+                _drawLinePoint(B,10,color)
+                dt.line(A, B)
+                _drawLinePoint(((x-lengthOfLine/2)+(ratioIn*unit),y),16,color)
+                dt.restore()
                 # if index == 1:
                 #     # drawing current reference
-                #     line((-lengthOfLine/2,-shift),(lengthOfLine/2,-shift))
+                #     dt.line((-lengthOfLine/2,-shift), (lengthOfLine/2,-shift))
                 #     _drawLinePoint((-lengthOfLine/2,-shift),10*scale,color)
                 #     _drawLinePoint((lengthOfLine/2,-shift),10*scale,color)
                 #     _drawLinePoint(((ratioInBP*unit-unit/2)*scale,-shift),len(self.kManager.bPointsInfo)*40*scale,color,(len(self.kManager.bPointsInfo)*40*scale)/2-5*scale)
 
 
-                # restore()
+
 
 
 class KinkManager(MTFloatingDialog, BaseWindowController):
@@ -105,12 +135,15 @@ class KinkManager(MTFloatingDialog, BaseWindowController):
     winMinSize = (250,200)
     winMaxSize = (250,6000)
     padding = 10
+    redColor = (1,0.1,0,.4)
+    greenColor = (0,0.9,0.5,.4)
 
     def __init__(self, designspace, toolBtn):
         self.designspace = designspace
         self.toolBtn = toolBtn
         self.glyph = None
         self.isActive = False
+        self.ratioAverageDeviation = 1
 
 
     def mt_removeObservers(self):
@@ -168,7 +201,8 @@ class KinkManager(MTFloatingDialog, BaseWindowController):
                         darkMode=self.uiSettings["darkMode"],
                         closable=True,
                         noTitleBar=True)
-        self.w.canvas = KinkingCanvas((0,0,-0,-0), self)
+        canvas = KinkingCanvas((0,0,-0,-0), self)
+        self.w.canvas = canvas.getCanvas()
         self.w.open()
 
         self.w.bind('close', self.closeWindow)
@@ -201,20 +235,20 @@ class KinkManager(MTFloatingDialog, BaseWindowController):
     def mt_draw(self, info):
         def _drawLinePoint(p,s,color,shift=0):
             x,y=p
-            save()
-            stroke(*color)
-            translate(x,y)
-            line((0,s/2-shift),(0,-s/2-shift))
-            restore()
+            dt.save()
+            dt.stroke(*color)
+            dt.translate(x,y)
+            dt.line((0,s/2-shift),(0,-s/2-shift))
+            dt.restore()
 
         def _drawPoint(p,s,color):
             x,y=p
-            save()
-            stroke(None)
-            fill(*color)
-            translate(x,y)
-            oval(-s/2,-s/2,s,s)
-            restore()
+            dt.save()
+            dt.stroke(None)
+            dt.fill(*color)
+            dt.translate(x,y)
+            dt.oval(-s/2,-s/2,s,s)
+            dt.restore()
 
         def _drawAngle(anchor,pointIn,pointOut):
             x,y = anchor
@@ -227,20 +261,20 @@ class KinkManager(MTFloatingDialog, BaseWindowController):
                 rotate((x2,0),-math.pi/2 - angle,(0,0))
                 )
 
-            save()
-            translate(x,y)
+            dt.save()
+            dt.translate(x,y)
 
             _drawPoint(line_ref[0],10*scale,color)
             _drawPoint(line_ref[1],10*scale,color)
 
-            fill(None)
-            strokeWidth(5*scale)
-            stroke(*color)
-            line(*line_ref)
-            stroke(None)
-            fill(*color)
+            dt.fill(None)
+            dt.strokeWidth(5*scale)
+            dt.stroke(*color)
+            dt.line(*line_ref)
+            dt.stroke(None)
+            dt.fill(*color)
 
-            restore()
+            dt.restore()
         # if  len(self.bPointsInfo) > 0:
         if  self.selectedInfo is not None:
             accuracyAngle = 2 # IMPORTANT, you should make a slider, or combobox
@@ -265,41 +299,6 @@ class KinkManager(MTFloatingDialog, BaseWindowController):
 
                 _drawAngle(bPoint,pointIn,pointOut)
 
-                # draw ratio
-                x,y = bPoint
-                shift = 30*scale
-                shift_offset = shift
-                ratioIn,ratioOut = info[2]
-
-                unit = 400
-                lengthOfLine = unit*scale
-                A,B = ((-lengthOfLine/2,- (shift*(index+1) + shift_offset)),(lengthOfLine/2,- (shift*(index+1) + shift_offset)))
-
-                if round(ratioIn,accuracyRatio) == round(ratioInBP,accuracyRatio):
-                    color = [0,0.9,0.5,.4]
-                else:
-                    color = (1,0.1,0,.4)
-
-                strokeWidth(3*scale)
-                stroke(*color)
-
-                save()
-                translate(x,y)
-
-                _drawLinePoint(A,10*scale,color)
-                _drawLinePoint(B,10*scale,color)
-                line(A,B)
-                _drawLinePoint(((ratioIn*unit-unit/2)*scale,-shift*(index+1)),10*scale,color)
-
-                if index == 1:
-                    # drawing current reference
-                    line((-lengthOfLine/2,-shift),(lengthOfLine/2,-shift))
-                    _drawLinePoint((-lengthOfLine/2,-shift),10*scale,color)
-                    _drawLinePoint((lengthOfLine/2,-shift),10*scale,color)
-                    _drawLinePoint(((ratioInBP*unit-unit/2)*scale,-shift),len(self.bPointsInfo)*40*scale,color,(len(self.bPointsInfo)*40*scale)/2-5*scale)
-
-
-                restore()
 
 
 
@@ -328,7 +327,7 @@ class KinkManager(MTFloatingDialog, BaseWindowController):
 
             gName = self.glyph.name
             self.bPointsInfo = [] # 0 - anchor | 1 - angle | 2 - ratio
-
+            ratios = []
             for font in self.allfonts:
                 for c_i, c in enumerate(self.glyph):
                     points = c.points
@@ -385,11 +384,16 @@ class KinkManager(MTFloatingDialog, BaseWindowController):
                                 lenOut = lenghtAB(bpAn,bpOut)
                                 whole = lenIn+lenOut
                                 ratioIn = lenIn/whole
+                                ratios += [ratioIn]
                                 ratioOut = lenOut/whole
                                 info = ((bpIn,bpAn,bpOut), angle(bpIn,bpOut),(ratioIn,ratioOut))
                                 self.bPointsInfo.append(info)
                                 if font == CurrentFont():
                                     self.selectedInfo = info
+        if ratios:
+            self.ratioAverageDeviation = statistics.stdev(ratios)
+        else:
+            self.ratioAverageDeviation = 0
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ from masterTools.UI.glyphCellFactory import GlyphCellFactory
 from masterTools.misc import getDev
 from mojo.extensions import ExtensionBundle
 
+
 if getDev():
     import sys, os
     currpath = os.path.join( os.path.dirname( __file__ ), '../..' )
