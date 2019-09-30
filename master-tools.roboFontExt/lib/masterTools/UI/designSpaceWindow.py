@@ -326,9 +326,18 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     # ---------------------
 
     def doubleClickFontListCB(self, sender):
+
         rowIndex = sender.getSelection()[0]
-        self.designspace.setOpenedFont(rowIndex)
-        
+        item = self.designspace.fontMasters[rowIndex]
+        openedFont = self.designspace.getOpenedFont(rowIndex)
+        if openedFont is not None:
+            self.designspace.delOpenedFont(rowIndex)
+            openedFont.close()
+
+        else:
+            self.designspace.setOpenedFont(rowIndex)
+            
+        publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
     def selectionFontListCB(self, sender):
         if sender.getSelection():
@@ -427,14 +436,11 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
 
     def fontWillCloseCB(self, info):
         openedFont = info.get('font')
-        openedFont_id = None
-        for _id in self.designspace.openedFontsById:
-            if openedFont.path == self.designspace.fontsById[_id].path:
-                openedFont_id = _id
-        if openedFont_id is not None:
-            fontsById = self.designspace.fontsById.keys()
-            rowIndex = list(fontsById).index(openedFont_id)
+        if openedFont is not None:
+            fontlist = [item['font'] for item in self.designspace.fontMasters]
+            rowIndex = fontlist.index(openedFont)
             self.designspace.delOpenedFont(rowIndex)
+            openedFont.close()
 
     def reloadFontListCB(self, info):
         self.items = self.prepareFontItems(self.designspace.fontMasters) ###TEST
