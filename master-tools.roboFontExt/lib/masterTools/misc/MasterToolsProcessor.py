@@ -3,6 +3,7 @@ from ufoProcessor import *
 from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.roboFont import *
 from pprint import pprint
+from collections import OrderedDict
 # from mojo.roboFont import AllFonts, RFont, OpenFont
 
 class MasterToolsProcessor(DesignSpaceProcessor):
@@ -22,7 +23,8 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def __init__(self, readerClass=None, writerClass=None, fontClass=None, ufoVersion=3, useVarlib=False):
         super(MasterToolsProcessor, self).__init__(readerClass=readerClass, writerClass=writerClass, fontClass=fontClass, ufoVersion=ufoVersion, useVarlib=useVarlib)
-        self.openedFonts = AllFonts()
+        self.openedFontsById = {}
+
 
 
 
@@ -48,7 +50,8 @@ class MasterToolsProcessor(DesignSpaceProcessor):
         pass
 
     def _instantiateFont(self, path):
-        for font in self.openedFonts:
+        for _id in self.openedFontsById:
+            font = self.openedFontsById[_id]
             if font.path == path:
                 return font
         return RFont(path, showInterface=False)
@@ -76,12 +79,16 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def _setFontMasters(self):
         self.fontMasters = []
-        self.fontsById = {}
+        self.fontsById = OrderedDict()
         for info in self.getFonts():
             font = info[0]
             fontname = os.path.relpath(font.path, self.path)
             fontname = fontname[3:]
             uniqueID = str(uuid4())
+            isFontOpened = False
+            if font in AllFonts():
+                self.openedFontsById[uniqueID] = font
+                isFontOpened = True
             self.fontMasters += [dict(
                 include=True,
                 fontname=fontname,
@@ -89,10 +96,12 @@ class MasterToolsProcessor(DesignSpaceProcessor):
                 path=info[0].path,
                 designSpacePosition=info[1],
                 positionString=" ".join([str(position)+": "+str(info[1][position]) for position in info[1]]),
-                uniqueID=uniqueID
+                uniqueID=uniqueID,
+                opened=isFontOpened,
                 )]
             self.fontsById[uniqueID] = font
         self._fontsLoaded = True
+        publishEvent("MT.designspace.fontMastersChanged", designspace=self)
 
     def getFontIndexes(self, font):
         indexes =[]
@@ -111,9 +120,7 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def getOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        hasInterface = item['font'].hasInterface
-        if not isinstance(hasInterface, bool):
-            hasInterface = hasInterface()
+        hasInterface = item['font'].hasInterface()
 
         if hasInterface:
             return item['font']
@@ -121,21 +128,25 @@ class MasterToolsProcessor(DesignSpaceProcessor):
 
     def setOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        assert not item['font'].hasInterface(), "WARNING font was already opened"
-        item['font'].openInterface()
-        item['font'].addObserver(self, 'includedFontChangedEvent', 'Font.Changed')
-        
-        self.openedFonts.append(item['font'])
+        # assert not item['font'].hasInterface(), "WARNING font was already opened"
+        if item['uniqueID'] not in self.openedFontsById.keys():
+            item['font'] = OpenFont(item['path'])
+            publishEvent("MT.designspace.fontMastersChanged", designspace=self)
+            item['font'].addObserver(self, 'includedFontChangedEvent', 'Font.Changed')
+            self.openedFontsById[item['uniqueID']] = item['font']
+
 
     def delOpenedFont(self, rowIndex):
         item = self.fontMasters[rowIndex]
-        assert item['font'].hasInterface(), "WARNING font is already closed, cannot delete"
-        item["font"].removeObserver(self, 'Font.Changed')
-        self.openedFonts.remove(item['font'])
+        font = self.openedFontsById.get(item['uniqueID'])
+        if font is not None:
+            font.removeObserver(self, 'Font.Changed')
+            del self.openedFontsById[item['uniqueID']]
+            
     
     def __del__(self):
-        if len(self.openedFonts) > 0:
-            for font in self.openedFonts:
+        if len(self.openedFontsById) > 0:
+            for font in self.openedFontsById:
                 font.removeObserver(self, 'Font.Changed')
 
 
