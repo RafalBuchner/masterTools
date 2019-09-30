@@ -206,6 +206,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         addObserver(self, "reloadFontListCB", "fontDidOpen")
         addObserver(self, "reloadFontListCB", "fontDidClose")
         addObserver(self, "fontWillCloseCB", "fontWillClose")
+        # addObserver(self, "fontDidCloseCB", "fontDidClose")
 
     def initHelpersGroup(self):
         def _btnCallback(sender):
@@ -328,14 +329,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
     def doubleClickFontListCB(self, sender):
 
         rowIndex = sender.getSelection()[0]
-        item = self.designspace.fontMasters[rowIndex]
-        openedFont = self.designspace.getOpenedFont(rowIndex)
-        if openedFont is not None:
-            self.designspace.delOpenedFont(rowIndex)
-            openedFont.close()
-
-        else:
-            self.designspace.setOpenedFont(rowIndex)
+        self.designspace.setOpenedFont(rowIndex)
             
         publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
@@ -434,18 +428,27 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         else:
             self.compatibilityTableTool.finish()
 
+    
     def fontWillCloseCB(self, info):
         openedFont = info.get('font')
         if openedFont is not None:
             fontlist = [item['font'] for item in self.designspace.fontMasters]
             rowIndex = fontlist.index(openedFont)
             self.designspace.delOpenedFont(rowIndex)
-            openedFont.close()
+            
 
     def reloadFontListCB(self, info):
         self.items = self.prepareFontItems(self.designspace.fontMasters) ###TEST
         self.fontPane.list.set(self.designspace.fontMasters)
         self.currentFontChangeCB(None)
+
+        if info['notificationName'] == 'fontDidClose':
+            closededFont = info.get('font')
+            for item in self.designspace.fontMasters:
+                if item['path'] == closededFont.path:
+                    item['font'] = closededFont
+
+            publishEvent("MT.designspace.fontMastersChanged", designspace=self.designspace)
 
     def closeDesignSpaceMainWindow(self, sender):
         self.uiSettingsControler.closeSettingsPanel()
