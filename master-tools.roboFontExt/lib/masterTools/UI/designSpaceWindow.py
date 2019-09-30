@@ -411,7 +411,7 @@ class DesignSpaceWindow(MTDialog, BaseWindowController):
         # checkbox functionality of btn in Tools Group
         if sender.status:
             if self.kinkManagerTool is None:
-                self.kinkManagerTool = KinkManager(self.designspace)
+                self.kinkManagerTool = KinkManager(self.designspace, toolBtn=sender)
             self.kinkManagerTool.start(self.designspace)
             self.toolObjects += [self.kinkManagerTool]
         else:

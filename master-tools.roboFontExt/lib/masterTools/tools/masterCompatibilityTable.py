@@ -145,7 +145,6 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
     ### Observers
 
     def fontBecameCurrentObserver(self, info):
-        print('xxxxxxxxxx ',info.__class__.__name__)
         if info['font'] is None:
             return
         items = self.tableContainer.list.get()
@@ -201,15 +200,15 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
         if hasattr(self.tableContainer, "list"):
             self.tableContainer.list.set(self.items)
         self.infoGroup.box.currentInfo.set([dict(title=title,info=self.info[title]) for title in self.info])
+
     def fontMastersChangedObserver(self, sender):
         self.updateFonts(sender)
 
     def updateFonts(self, sender=None):
-        print('updateFonts')
-        size = self.headerHeight
-        maxsize = size * 50
-        width = round(int(size*1.5))
-        contourWidth = size*4
+        _size = self.headerHeight
+        maxsize = _size * 50
+        width = int(round(_size*1.5))
+        contourWidth = _size*4
         if sender is not None:
             self.designspace = sender['designspace']
         x,y,p=(self.padding for i in range(3))
@@ -226,7 +225,7 @@ class CompatibilityTableWindow(MTFloatingDialog, BaseWindowController):
             # size of the cell will be determined by font's unitsPerEm
             bufferPercent = (item['font'].info.unitsPerEm / 1000) *.001
             bufferPercent = .1
-            glyphcell = self.uiSettingsControler.getGlyphCellPreview_inFont(item['font'], size=(width, size*.75))
+            glyphcell = self.uiSettingsControler.getGlyphCellPreview_inFont(item['font'], size=(width, _size*.75))
             if glyphcell is None:
                 size = None
                 maxsize = None

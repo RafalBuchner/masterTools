@@ -1,18 +1,114 @@
 # coding=utf-8
 from vanilla import *
 from defconAppKit.windows.baseWindow import BaseWindowController
-from mojo.events import addObserver, removeObserver
+from mojo.events import addObserver, removeObserver, publishEvent
 from mojo.drawingTools import *
 from mojo.roboFont import CurrentGlyph, CurrentFont
 import math
+from mojo.canvas import CanvasGroup
 
+from defconAppKit.windows.baseWindow import BaseWindowController
+
+from masterTools.UI.settings import Settings
+from masterTools.UI.vanillaSubClasses import MTList,  MTFloatingDialog
 import masterTools.misc.countPoints as countPoints
 from masterTools.misc.MTMath import *
 
+class KinkingCanvas(CanvasGroup):
+    def __init__(self, posSize, kManager):
+        super().__init__(posSize, self)
+        self.posSize = posSize
+        self.kManager = kManager
+        addObserver(self, 'kinkManagerChanged', 'mt.KinkManager.changed') # description
 
-class KinkManager(object):
-    def __init__(self, designspace):
+    def kinkManagerChanged(self,data):
+        self.kManager = data['data']
+        self.draw()
+
+    def draw(self):
+        def _drawLinePoint(p,s,color,shift=0):
+            x,y=p
+            save()
+            stroke(*color)
+            translate(x,y)
+            line((0,s/2-shift),(0,-s/2-shift))
+            restore()
+
+        def _drawPoint(p,s,color):
+            x,y=p
+            save()
+            stroke(None)
+            fill(*color)
+            translate(x,y)
+            oval(-s/2,-s/2,s,s)
+            restore()
+
+
+        if  self.kManager.selectedInfo is not None:
+            accuracyAngle = 2 # IMPORTANT, you should make a slider, or combobox
+            accuracyRatio = 3
+            scale = 1
+            selectedInfo = self.kManager.selectedInfo
+            bPoint = selectedInfo[0][1]
+            pointIn = selectedInfo[0][0]
+            pointOut = selectedInfo[0][2]
+            angleBp = selectedInfo[1]
+            ratioInBP = selectedInfo[2][0]
+
+
+            for index, info in enumerate(self.kManager.bPointsInfo):
+                
+                angle = info[1]
+                # if round(angle,accuracyAngle) == round(angleBp,accuracyAngle):
+                #     color = [0,0.9,0.5,.4]
+                #     angle = angleBp-2*math.pi
+                # else:
+                color = (1,0.1,0,.4)
+
+                # _drawAngle(bPoint,pointIn,pointOut)
+
+                # draw ratio
+                # x,y = bPoint
+
+                shift = 30*scale
+                shift_offset = shift
+                x,y = (self.getNSView().frame().size.width/2,shift*index+shift_offset)
+                # _drawLinePoint((x,y),10*scale,color)
+                
+                # ratioIn,ratioOut = info[2]
+
+                unit = 120
+                lengthOfLine = unit
+                A,B = ((x-lengthOfLine/2,y),(x+lengthOfLine/2,y))
+
+                strokeWidth(3*scale)
+                stroke(*color)
+
+                _drawLinePoint(A,10*scale,color)
+                _drawLinePoint(B,10*scale,color)
+                line(A,B)
+                _drawLinePoint(((ratioIn*unit-unit/2)*scale,y),16*scale,color)
+
+                # if index == 1:
+                #     # drawing current reference
+                #     line((-lengthOfLine/2,-shift),(lengthOfLine/2,-shift))
+                #     _drawLinePoint((-lengthOfLine/2,-shift),10*scale,color)
+                #     _drawLinePoint((lengthOfLine/2,-shift),10*scale,color)
+                #     _drawLinePoint(((ratioInBP*unit-unit/2)*scale,-shift),len(self.kManager.bPointsInfo)*40*scale,color,(len(self.kManager.bPointsInfo)*40*scale)/2-5*scale)
+
+
+                # restore()
+
+
+class KinkManager(MTFloatingDialog, BaseWindowController):
+    id = 'mt.tools.KinkManager'
+    winMinSize = (250,200)
+    winMaxSize = (250,6000)
+    padding = 10
+
+    def __init__(self, designspace, toolBtn):
         self.designspace = designspace
+        self.toolBtn = toolBtn
         self.glyph = None
         self.isActive = False
 
@@ -56,6 +152,36 @@ class KinkManager(object):
         addObserver(self, "mt_draw", "draw")
         addObserver(self, "mt_updateFonts", "MT.designspace.fontMastersChanged")
 
+        self.initUI()
+
+    def initUI(self):
+        self.uiSettingsControler = Settings()
+        self.uiSettings = self.uiSettingsControler.getDict()
+        self.glyphColor = self.uiSettingsControler.getGlyphColor_forCurrentMode()
+        x, y, p = (self.padding, self.padding, self.padding)
+
+        self.w = self.window(self.winMinSize,
+                        "KinkManager",
+                        minSize=self.winMinSize,
+                        maxSize=self.winMaxSize,
+                        autosaveName=self.id,
+                        darkMode=self.uiSettings["darkMode"],
+                        closable=True,
+                        noTitleBar=True)
+        self.w.canvas = KinkingCanvas((0,0,-0,-0), self)
+        self.w.open()
+
+        self.w.bind('close', self.closeWindow)
+
+    def closeWindow(self, info):
+        # binding to window
+        self.mt_removeObservers()
+        self.isActive = False
+        # resetting toolbar button status, when window is closed
+        buttonObject = self.toolBtn.getNSButton()
+        self.toolBtn.status = False
+        buttonObject.setBordered_(False)
+
     def finish(self):
         self.glyph.prepareUndo("Show Curvature")
         self.checkInflections()
@@ -63,6 +189,9 @@ class KinkManager(object):
         self.glyph.update()
         # set "Start" as title for the button
         self.mt_removeObservers()
+        if hasattr(self, "w"):
+            if self.w._window is not None:
+                self.w.close()
         self.isActive = False
 
     def mt_updateFonts(self, sender):
@@ -124,8 +253,9 @@ class KinkManager(object):
             angleBp = selectedInfo[1]
             ratioInBP = selectedInfo[2][0]
 
-            for info in self.bPointsInfo[1:]:
-                index = self.bPointsInfo.index(info)
+
+            for index, info in enumerate(self.bPointsInfo):
+                
                 angle = info[1]
                 if round(angle,accuracyAngle) == round(angleBp,accuracyAngle):
                     color = [0,0.9,0.5,.4]
@@ -138,11 +268,12 @@ class KinkManager(object):
                 # draw ratio
                 x,y = bPoint
                 shift = 30*scale
+                shift_offset = shift
                 ratioIn,ratioOut = info[2]
 
                 unit = 400
                 lengthOfLine = unit*scale
-                A,B = ((-lengthOfLine/2,-shift*(index+1)),(lengthOfLine/2,-shift*(index+1)))
+                A,B = ((-lengthOfLine/2,- (shift*(index+1) + shift_offset)),(lengthOfLine/2,- (shift*(index+1) + shift_offset)))
 
                 if round(ratioIn,accuracyRatio) == round(ratioInBP,accuracyRatio):
                     color = [0,0.9,0.5,.4]
@@ -161,6 +292,7 @@ class KinkManager(object):
                 _drawLinePoint(((ratioIn*unit-unit/2)*scale,-shift*(index+1)),10*scale,color)
 
                 if index == 1:
+                    # drawing current reference
                     line((-lengthOfLine/2,-shift),(lengthOfLine/2,-shift))
                     _drawLinePoint((-lengthOfLine/2,-shift),10*scale,color)
                     _drawLinePoint((lengthOfLine/2,-shift),10*scale,color)
@@ -187,6 +319,7 @@ class KinkManager(object):
 
     def mt_glyphChanged(self, info):
         self.checkInflections()
+        publishEvent('mt.KinkManager.changed', data=self) # description
 
     def checkInflections(self):
 
@@ -195,6 +328,7 @@ class KinkManager(object):
 
             gName = self.glyph.name
             self.bPointsInfo = [] # 0 - anchor | 1 - angle | 2 - ratio
+
             for font in self.allfonts:
                 for c_i, c in enumerate(self.glyph):
                     points = c.points

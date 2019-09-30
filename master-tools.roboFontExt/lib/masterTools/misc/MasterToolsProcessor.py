@@ -132,7 +132,7 @@ class MasterToolsProcessor(DesignSpaceProcessor):
         assert item['font'].hasInterface(), "WARNING font is already closed, cannot delete"
         item["font"].removeObserver(self, 'Font.Changed')
         self.openedFonts.remove(item['font'])
-    
+
     def __del__(self):
         if len(self.openedFonts) > 0:
             for font in self.openedFonts:
