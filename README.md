@@ -8,5 +8,7 @@ Tools for visualizing and managing problems within designspaces RoboFont editor.
 
 
 
-## thanks to
+## thanks
+This tool has been created with the help and guidence of
+
  [Erik van Blokland @LettError](https://github.com/LettError), [Frederik Berlaen @typemytype](https://github.com/typemytype), [Stephen Nixon @thundernixon](https://github.com/thundernixon), [Bahman Eslami @typoman](https://github.com/typoman), my mum and math-ninja [Lidia Buchner](images/math_ninja.jpg)
